@@ -2238,7 +2238,7 @@ const renderWithdrawInterface = () => {
       <div className="referral-section">
         <div className="referral-info">
           <p>Don't Miss Out - Unlock Your Invite Rewards Now!</p>
-          <p>Invite just a friend and earn 15% of their first deposit straight into your wallet</p>
+          <p>Invite friends and earn 15% of each person's first deposit straight into your wallet!</p>
           {referralCode ? (
             <div className="referral-code-box">
               <p>Your Referral Code:</p>
@@ -2253,26 +2253,37 @@ const renderWithdrawInterface = () => {
             <div className="referral-stats">
               <h3>Your Referral Stats</h3>
               <p>Total Referrals: {referralStats.total}</p>
+              <p>Funded Referrals: {referralStats.funded}</p>
 
               {referralStats.funded >= 1 ? (
-                referralStats.has_received_bonus ? (
-                  <div className="bonus-received">
-                    <p className="bonus-message">Your referral bonus has been paid!</p>
-                    <p className="bonus-details">
-                      Initial Deposit: ${referralStats.initial_deposit}<br/>
-                      Bonus Amount: ${(referralStats.initial_deposit * 0.15).toFixed(2)}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="bonus-pending">
-                    {referralStats.initial_deposit ? 
-                      "Processing your referral bonus..." :
-                      "Make your first deposit to receive your referral bonus!"}
+                <div className="bonus-received">
+                  <p className="bonus-message">🎉 You've earned referral bonuses!</p>
+                  <p className="bonus-details">
+                    Total Bonus Earned: ${referralStats.total_bonus_earned?.toFixed(2) || '0.00'}
                   </p>
-                )
+                  <p style={{ fontSize: '0.9rem', color: '#800080', marginTop: '8px' }}>
+                    💡 Keep referring more friends to earn more bonuses!
+                  </p>
+                </div>
               ) : (
-                <p>Refer more funded users to earn more!</p>
+                <p className="bonus-pending">
+                  Refer friends who make deposits to start earning bonuses!
+                </p>
               )}
+              
+              <div style={{ 
+                marginTop: '15px', 
+                padding: '10px', 
+                background: 'rgba(128,0,128,0.1)', 
+                borderRadius: '8px',
+                fontSize: '0.85rem'
+              }}>
+                <p><strong>How it works:</strong></p>
+                <p>• Share your referral code with friends</p>
+                <p>• When they sign up and make their first deposit</p>
+                <p>• You instantly earn 15% of their deposit amount</p>
+                <p>• Unlimited referrals = unlimited bonuses!</p>
+              </div>
             </div>
           )}
         </div>
