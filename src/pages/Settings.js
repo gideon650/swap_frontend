@@ -173,7 +173,7 @@ const Settings = () => {
           </div>
         </Link>
 
-        <a href="mailto:support@swapviewapp.site" className="settings-item">
+        <a href="mailto:support@swapviewapplications.com" className="settings-item">
           <FaEnvelope />
           <div className="settings-item-text">
             <span className="settings-item-title">Contact Us</span>
