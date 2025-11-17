@@ -175,10 +175,19 @@ const Trade = () => {
     // Check for minimum amounts and set error if below threshold
     if (value && !isNaN(parseFloat(value))) {
       const numValue = parseFloat(value);
-      if (inputType === "amount" && numValue > 0 && numValue < 3) {
-        setTradeError("Minimum amount is $3");
-      } else if (inputType === "quantity" && numValue > 0 && numValue < 100) {
-        setTradeError("Minimum quantity is 100");
+      
+      if (inputType === "amount" && numValue > 0 && numValue < 201) {
+        setTradeError("Minimum amount is $201");
+      } else if (inputType === "quantity" && numValue > 0) {
+        const selectedAssetObj = assets.find(asset => asset.symbol === selectedAsset);
+        if (selectedAssetObj) {
+          const currentPrice = parseFloat(selectedAssetObj.price_usd);
+          const totalCost = numValue * currentPrice;
+          
+          if (totalCost < 201) {
+            setTradeError(`Minimum total cost is $201. Your quantity costs $${totalCost.toFixed(2)}`);
+          }
+        }
       }
     }
   };
@@ -228,15 +237,28 @@ const Trade = () => {
 
     // Check minimum amounts for buy trades ONLY
     if (type === "buy") {
-      if (inputType === "amount" && amountValue < 3) {
-        setTradeError("Minimum amount is $3");
-        return;
+      if (inputType === "amount") {
+        // For amount type: check if entered amount is at least $201
+        if (amountValue < 201) {
+          setTradeError("Minimum amount is $201");
+          return;
+        }
+      } else if (inputType === "quantity") {
+        // For quantity type: calculate total cost and check if it's at least $201
+        const selectedAssetObj = assets.find(asset => asset.symbol === selectedAsset);
+        if (selectedAssetObj) {
+          const currentPrice = parseFloat(selectedAssetObj.price_usd);
+          const totalCost = amountValue * currentPrice;
+          
+          if (totalCost < 201) {
+            setTradeError(`Minimum total cost is $201. Your quantity costs $${totalCost.toFixed(2)}`);
+            return;
+          }
+        } else {
+          setTradeError("Unable to calculate asset price");
+          return;
+        }
       }
-      if (inputType === "quantity" && amountValue < 100) {
-        setTradeError("Minimum quantity is 100");
-        return;
-      }
-      
     }
 
     try {
