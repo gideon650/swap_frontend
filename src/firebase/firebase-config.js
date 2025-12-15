@@ -1,14 +1,14 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging } from 'firebase/messaging';
 
-// Firebase configuration with fallbacks to hard-coded values
+// Firebase configuration - NO hardcoded values
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyAf7y029COfcBwjrnFikMzq4XeLdGg9thk",
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "amalunwa.firebaseapp.com",
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "amalunwa",
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "amalunwa.firebasestorage.app",
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "582475691199",
-  appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:582475691199:web:0c8b2f91721a808e1e020a"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
 // Validate configuration
@@ -21,7 +21,9 @@ const validateConfig = (config) => {
     throw new Error(`Missing Firebase configuration: ${missingFields.join(', ')}`);
   }
   
-  console.log('Firebase configuration validated successfully');
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Firebase configuration validated successfully');
+  }
   return true;
 };
 
@@ -36,7 +38,9 @@ let messaging = null;
 
 try {
   messaging = getMessaging(app);
-  console.log('Firebase messaging initialized successfully');
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Firebase messaging initialized successfully');
+  }
 } catch (error) {
   console.error('Error initializing Firebase messaging:', error);
 }

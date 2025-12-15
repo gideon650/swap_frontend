@@ -12,10 +12,14 @@ class FirebaseService {
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        console.log('Notification permission granted.');
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Notification permission granted.');
+        }
         return true;
       } else {
-        console.log('Notification permission denied.');
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Notification permission denied.');
+        }
         return false;
       }
     } catch (error) {
@@ -31,10 +35,14 @@ class FirebaseService {
         vapidKey: this.vapidKey
       });
       if (token) {
-        console.log('FCM Token:', token);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('FCM Token obtained successfully');
+        }
         return token;
       } else {
-        console.log('No registration token available.');
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('No registration token available.');
+        }
         return null;
       }
     } catch (error) {
@@ -52,7 +60,7 @@ class FirebaseService {
         return false;
       }
 
-      const response = await axios.post(
+      await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/fcm/register/`,
         {
           token: token,
@@ -66,7 +74,9 @@ class FirebaseService {
         }
       );
 
-      console.log('Token registered with backend:', response.data);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Token registered with backend successfully');
+      }
       return true;
     } catch (error) {
       console.error('Error registering token with backend:', error);
@@ -83,7 +93,7 @@ class FirebaseService {
         return false;
       }
 
-      const response = await axios.post(
+      await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/fcm/unregister/`,
         {
           token: token
@@ -96,7 +106,9 @@ class FirebaseService {
         }
       );
 
-      console.log('Token unregistered from backend:', response.data);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Token unregistered from backend successfully');
+      }
       return true;
     } catch (error) {
       console.error('Error unregistering token from backend:', error);
@@ -141,7 +153,9 @@ class FirebaseService {
   // Setup foreground message handler
   setupForegroundMessageHandler() {
     onMessage(messaging, (payload) => {
-      console.log('Message received in foreground:', payload);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Message received in foreground:', payload);
+      }
       // Show notification when app is in foreground
       this.showForegroundNotification(payload);
     });
@@ -155,8 +169,8 @@ class FirebaseService {
       navigator.serviceWorker.ready.then((registration) => {
         registration.showNotification(title || 'Notification', {
           body: body || 'You have a new notification',
-          icon: '/firebase-logo.png', // Add your app icon
-          badge: '/badge-icon.png', // Add your badge icon
+          icon: '/firebase-logo.png',
+          badge: '/badge-icon.png',
           data: data,
           actions: this.getNotificationActions(data),
           tag: data.type || 'general',
