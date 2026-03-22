@@ -705,8 +705,6 @@ const Wallet = () => {
     ERC20: ERC20QR
   };
 
-  const bybitWalletEmail = "395552798";
-
   // Handle URL tab parameters
   useEffect(() => {
     const searchParams = new URLSearchParams(routeLocation.search);
@@ -1424,60 +1422,13 @@ const renderDepositInterface = () => {
       {depositMethod === "crypto" && (
         <div className="crypto-deposit-options">
           <h8>Deposit crypto</h8>
-          <div className="method-buttons">
-            <button 
-              onClick={() => setDepositCryptoType("viaBuybit")}
-              className={depositCryptoType === "viaBuybit" ? "active-button" : ""}>
-              Via Bybit
-            </button>
+          <div className="method-buttons" style={{ gridTemplateColumns: "1fr", maxWidth: "200px", margin: "0 auto" }}>
             <button 
               onClick={() => setDepositCryptoType("onchain")}
               className={depositCryptoType === "onchain" ? "active-button" : ""}>
               On-chain Deposit
             </button>
           </div>
-        </div>
-      )}
-
-      {depositMethod === "crypto" && depositCryptoType === "viaBuybit" && (
-        <div className="deposit-form">
-          <div className="form-group">
-            <p>USDT</p>
-            <div className="copy-box">
-              {bybitWalletEmail} <button onClick={() => copyToClipboard(bybitWalletEmail)}>Copy</button>
-            </div>
-          </div>
-          <div className="form-group">
-            <label>Amount</label>
-            <input 
-              type="number" 
-              placeholder="Enter quantity (USDT)" 
-              value={amount} 
-              onChange={handleAmountChange} 
-            />
-            {amountError && (
-              <div className="amount-error-message">
-                Minimum deposit amount is ${MINIMUM_AMOUNT}
-              </div>
-            )}
-            {amount && !amountError && (
-              <div style={{ marginTop: 8, color: "#008000" }}>
-                ≈ ₦{nairaValue} NGN
-              </div>
-            )}
-          </div>
-          <div className="form-group">
-            <label>Transaction hash</label>
-            <input 
-              type="text" 
-              placeholder="Enter transaction hash" 
-              value={transactionId} 
-              onChange={(e) => setTransactionId(e.target.value)} 
-            />
-          </div>
-          <button className="submit-button" onClick={submitTransaction} disabled={loading || amountError}>
-            {loading ? "Processing..." : "Submit"}
-          </button>
         </div>
       )}
 
@@ -1756,8 +1707,6 @@ const renderWithdrawInterface = () => {
       case "BANK":
       case "naira":
         return "Enter amount";
-      case "BYBIT":
-      case "usdt":
       case "ON_CHAIN":
         return "Enter amount (Transaction fee = $1)";
       default:
@@ -1767,26 +1716,21 @@ const renderWithdrawInterface = () => {
 
   return (
     <div className="withdraw-section">
-      <div className="method-buttons">
+      <div className="method-buttons" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
         <button 
           onClick={() => handleWithdrawMethodChange("INTERNAL")}
           className={withdrawMethod === "INTERNAL" ? "active-button" : ""}>
-          Internal Transfer
-        </button>
-        <button 
-          onClick={() => handleWithdrawMethodChange("BYBIT")}
-          className={withdrawMethod === "BYBIT" || withdrawMethod === "usdt" ? "active-button" : ""}>
-          Bybit UID
+          Internal
         </button>
         <button 
           onClick={() => handleWithdrawMethodChange("ON_CHAIN")}
           className={withdrawMethod === "ON_CHAIN" ? "active-button" : ""}>
-          On-Chain Transfer
+          On-Chain
         </button>
         <button 
           onClick={() => handleWithdrawMethodChange("BANK")}
           className={withdrawMethod === "BANK" || withdrawMethod === "naira" ? "active-button" : ""}>
-          p2p
+          P2P
         </button>
       </div>
 
@@ -1824,20 +1768,6 @@ const renderWithdrawInterface = () => {
                   placeholder="Recipient address" 
                   value={internalWalletId}
                   onChange={(e) => setInternalWalletId(e.target.value)} 
-                />
-              </div>
-            </div>
-          )}
-          
-          {(withdrawMethod === "BYBIT" || withdrawMethod === "usdt") && (
-            <div className="withdraw-field-group" id="bybit-fields">
-              <div className="form-group">
-                <label>Bybit UID</label>
-                <input 
-                  type="email" 
-                  placeholder="Bybit UID" 
-                  value={bybitEmail}
-                  onChange={(e) => setBybitEmail(e.target.value)} 
                 />
               </div>
             </div>
