@@ -1,129 +1,155 @@
 .settings-container {
-  max-width: 450px;
-  width: 90%;
+  max-width: 460px;
+  width: 92%;
   margin: 30px auto;
-  padding: 30px 20px;
-  background: linear-gradient(145deg, #1a1a1a, #121212);
+  padding: 28px 20px 24px;
+  background: #000000;
   color: white;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
   text-align: center;
 }
 
 .settings-header {
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
 .settings-header h2 {
-  font-size: clamp(24px, 5vw, 28px);
+  font-size: clamp(22px, 5vw, 26px);
   font-weight: 600;
-  margin-bottom: 10px;
-  background: linear-gradient(90deg, #800080, #a04db3);
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, #800080, #b060c0);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  letter-spacing: 2px;
 }
 
 .settings-header p {
-  color: #b3b3b3;
-  font-size: clamp(12px, 3vw, 14px);
+  color: #888;
+  font-size: clamp(11px, 2.8vw, 13px);
 }
 
+/* Grid Layout */
 .settings-options {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
 }
 
+/* Card style */
 .settings-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 16px;
-  background: rgba(128, 0, 128, 0.15);
-  border-left: 4px solid #800080;
-  border-radius: 8px;
+  justify-content: flex-start;
+  padding: 14px 6px 11px;
+  background: #0a0a0a;
+  border: 0.5px solid rgba(128, 0, 128, 0.3);
+  border-radius: 14px;
   color: white;
   text-decoration: none;
-  font-size: clamp(14px, 4vw, 16px);
-  transition: all 0.3s ease;
+  transition: background 0.25s ease, transform 0.2s ease, border-color 0.25s ease;
+  position: relative;
+  cursor: pointer;
+  gap: 8px;
 }
 
 .settings-item:hover {
-  background: rgba(128, 0, 128, 0.3);
-  transform: translateX(5px);
+  background: rgba(128, 0, 128, 0.18);
+  border-color: rgba(128, 0, 128, 0.65);
+  transform: translateY(-3px);
 }
 
-.settings-item svg {
-  font-size: clamp(18px, 5vw, 20px);
-  min-width: 20px;
-  margin-right: 12px;
-  color: #800080;
+.settings-item:active {
+  transform: translateY(-1px);
 }
 
-.settings-item-text {
+/* Icon container */
+.settings-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(128, 0, 128, 0.15);
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  flex: 1;
-  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.25s ease;
 }
 
+.settings-item:hover .settings-icon-box {
+  background: rgba(128, 0, 128, 0.28);
+}
+
+.settings-icon-box svg {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #a040b8;
+}
+
+/* Label */
 .settings-item-title {
+  font-size: clamp(9px, 2.4vw, 11px);
   font-weight: 500;
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #d0d0d0;
+  text-align: center;
+  line-height: 1.3;
   width: 100%;
+  white-space: normal;
+  word-break: break-word;
 }
 
-.settings-item-description {
-  font-size: clamp(10px, 2.5vw, 12px);
-  color: #b3b3b3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-}
 
 .settings-footer {
-  margin-top: 30px;
-  font-size: clamp(10px, 2.5vw, 12px);
-  color: #666;
+  margin-top: 22px;
+  font-size: clamp(10px, 2.5vw, 11px);
+  color: #555;
 }
 
-/* Mobile Responsive Adjustments */
-@media (max-width: 480px) {
+/* Mobile */
+@media (max-width: 400px) {
   .settings-container {
-    width: 95%;
-    padding: 20px 15px;
-    margin: 20px auto;
+    width: 96%;
+    padding: 20px 12px 18px;
   }
-  
-  .settings-header {
-    margin-bottom: 20px;
+
+  .settings-options {
+    gap: 12px;
   }
-  
+
   .settings-item {
-    padding: 14px 12px;
+    padding: 12px 5px 10px;
   }
-  
-  .settings-item svg {
-    margin-right: 10px;
+
+  .settings-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
   }
-  
-  .settings-footer {
-    margin-top: 25px;
+
+  .settings-icon-box svg {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
   }
 }
 
-/* Small screens */
+/* Very small screens */
 @media (max-width: 320px) {
-  .settings-container {
-    padding: 15px 10px;
+  .settings-options {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
   }
-  
+
   .settings-item {
-    padding: 12px 10px;
+    padding: 10px 4px 8px;
+    border-radius: 10px;
+  }
+
+  .settings-icon-box {
+    width: 32px;
+    height: 32px;
   }
 }

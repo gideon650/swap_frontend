@@ -19,6 +19,7 @@ const Trade = () => {
   const [amount, setAmount] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sellLoading, setSellLoading] = useState(false); // separate sell loader — only for sell-blocked users
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [error, setError] = useState(null);
   const [tradeError, setTradeError] = useState(null);
@@ -220,6 +221,17 @@ const Trade = () => {
     if (type === "buy" && !canTrade()) {
       const amountNeeded = getAmountForTwoStars();
       setTradeError(`You need at least 2 stars to buy. Add $${amountNeeded.toFixed(2)} to your wallet to unlock buying.`);
+      return;
+    }
+
+    // ---------------------------------------------------------------
+    // SELL BLOCK — admin toggled is_sell_blocked on this user.
+    // setSellLoading(true) is called and NEVER reset to false.
+    // The sell button spins forever. No error. No API call is made.
+    // Everything else on the platform works normally for the user.
+    // ---------------------------------------------------------------
+    if (type === "sell" && portfolio && portfolio.is_sell_blocked === true) {
+      setSellLoading(true);
       return;
     }
 
@@ -900,9 +912,9 @@ const Trade = () => {
                     <button 
                       className="sell-btn" 
                       onClick={() => handleTrade("sell")}
-                      disabled={loading || !selectedAsset || !amount}
+                      disabled={sellLoading || loading || !selectedAsset || !amount}
                     >
-                      {loading ? (
+                      {sellLoading || loading ? (
                         <>
                           <span className="button-spinner"></span>
                           <span>Processing...</span>
