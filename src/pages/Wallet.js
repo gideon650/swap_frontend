@@ -1692,7 +1692,7 @@ const renderWithdrawInterface = () => {
   const amountAfterFee = amount ? calculateAmountAfterFee(amount) : {netAmount: 0, fee: 0};
 
   // Merchants excluded from withdraw section
-  const WITHDRAW_EXCLUDED_USERNAMES = ['darwin', 'zoro tek'];
+  const WITHDRAW_EXCLUDED_USERNAMES = ['darwin ↔️', 'zoro tek'];
 
   // Filter merchants based on search term, excluding specific usernames for withdraw
   const filteredMerchants = merchants.filter(merchant => {
