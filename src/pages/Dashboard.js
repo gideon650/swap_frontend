@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
+import CashbackModal, { useCashbackPromo } from "./CashbackModal";
 
 const Dashboard = () => {
   const [portfolio, setPortfolio] = useState(null);
@@ -15,6 +16,9 @@ const Dashboard = () => {
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
+  // Cashback promo hook
+  const { cashbackPromo, showCashbackModal, setShowCashbackModal } = useCashbackPromo();
 
   // Filter function to exclude USDT
   const filterOutUSDT = (tokens) => {
@@ -38,7 +42,6 @@ const Dashboard = () => {
         );
 
         setPortfolio(portfolioRes.data);
-        // Filter out USDT from the prices/cryptocurrencies list
         setPrices(filterOutUSDT(pricesRes.data.cryptocurrencies || []));
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -54,7 +57,7 @@ const Dashboard = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % 2);
-    }, 10000); // 10 seconds
+    }, 10000);
 
     return () => clearInterval(interval);
   }, []);
@@ -66,17 +69,14 @@ const Dashboard = () => {
     else if (balance >= 501) filledStars = 3;
     else if (balance >= 201) filledStars = 2;
     else filledStars = 1;
-    
+
     const emptyStars = 5 - filledStars;
-    
+
     return "★".repeat(filledStars) + "☆".repeat(emptyStars);
   };
 
-  // Add this function to calculate amount needed for 3 stars
   const getAmountToThreeStars = (currentBalance) => {
-    if (currentBalance >= 1001) return 0; // Already has 3+ stars
-    
-    // Calculate how much is needed to reach the 3-star threshold ($301)
+    if (currentBalance >= 1001) return 0;
     return (1001 - currentBalance).toFixed(2);
   };
 
@@ -123,26 +123,25 @@ const Dashboard = () => {
   };
 
   const getMessages = () => {
-  const messages = [
-    {
-      id: 'deposit',
-      icon: '💰',
-      text: portfolio && Number(portfolio.balance_usd) < 1001 
-        ? `Add $${getAmountToThreeStars(Number(portfolio.balance_usd))} to your wallet to get upgraded&nbsp;to <span class="gold-star">4&nbsp;star</span> to enjoy our premium features. Deposit&nbsp;now→`
-        : 'Upgrade your account for premium features',
-      type: 'deposit'
-    },
-    {
-      id: 'referral',
-      icon: '🎁',
-      text: 'Refer a user and earn 15% of their initial deposit. Refer a friend now→',
-      type: 'referral'
-    }
-  ];
-  return messages;
-};
+    const messages = [
+      {
+        id: 'deposit',
+        icon: '💰',
+        text: portfolio && Number(portfolio.balance_usd) < 1001
+          ? `Add $${getAmountToThreeStars(Number(portfolio.balance_usd))} to your wallet to get upgraded&nbsp;to <span class="gold-star">4&nbsp;star</span> to enjoy our premium features. Deposit&nbsp;now→`
+          : 'Upgrade your account for premium features',
+        type: 'deposit'
+      },
+      {
+        id: 'referral',
+        icon: '🎁',
+        text: 'Refer a user and earn 15% of their initial deposit. Refer a friend now→',
+        type: 'referral'
+      }
+    ];
+    return messages;
+  };
 
-  // Touch event handlers for horizontal scrolling
   const handleTouchStart = (e) => {
     setIsDragging(true);
     setStartX(e.touches[0].pageX - trendingRef.current.offsetLeft);
@@ -153,7 +152,7 @@ const Dashboard = () => {
     if (!isDragging) return;
     e.preventDefault();
     const x = e.touches[0].pageX - trendingRef.current.offsetLeft;
-    const walk = (x - startX) * 2; // Adjust scroll speed
+    const walk = (x - startX) * 2;
     trendingRef.current.scrollLeft = scrollLeft - walk;
   };
 
@@ -167,7 +166,6 @@ const Dashboard = () => {
       token.symbol.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Sort user tokens by balance (highest to lowest) and filter out USDT
   const sortedUserTokens = portfolio?.tokens
     ? filterOutUSDT([...portfolio.tokens]).sort((a, b) => {
         const priceA = prices.find((p) => p.symbol === a.symbol)?.price_usd || 0;
@@ -191,6 +189,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
+
       {/* Star Tiers Modal */}
       {showStarTiersModal && (
         <div className="modal-overlay">
@@ -205,6 +204,18 @@ const Dashboard = () => {
             />
           </div>
         </div>
+      )}
+
+      {/* Cashback Promo Modal */}
+      {showCashbackModal && cashbackPromo && (
+        <CashbackModal
+          promo={cashbackPromo}
+          onClose={() => setShowCashbackModal(false)}
+          onDeposit={() => {
+            setShowCashbackModal(false);
+            navigate('/wallet?tab=deposit');
+          }}
+        />
       )}
 
       <header className="dashboard-header">
@@ -241,7 +252,6 @@ const Dashboard = () => {
 
         {/* Trending Tokens */}
         <section className="trending-section">
-          {/* Mobile Search - appears above trending on small screens */}
           <div className="mobile-search-container">
             <input
               type="text"
@@ -254,7 +264,6 @@ const Dashboard = () => {
 
           <div className="trending-header-container">
             <h2>TRENDING</h2>
-            {/* Desktop Search - appears beside trending on larger screens */}
             <div className="desktop-search-container">
               <input
                 type="text"
@@ -273,8 +282,8 @@ const Dashboard = () => {
             >
               &lt;
             </button>
-            <div 
-              className="trending-grid" 
+            <div
+              className="trending-grid"
               ref={trendingRef}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
@@ -335,7 +344,7 @@ const Dashboard = () => {
                 onClick={() => handleMessageClick(message.type)}
               >
                 <div className="message-icon">{message.icon}</div>
-                <div 
+                <div
                   className="message-text"
                   dangerouslySetInnerHTML={{ __html: message.text }}
                 />
@@ -357,10 +366,10 @@ const Dashboard = () => {
                 const tokenValue = priceData
                   ? parseFloat(token.balance) * priceData.price_usd
                   : 0;
-                
+
                 const percentChange = priceData?.percent_change || 0;
                 const changeType = priceData?.change || "neutral";
-                
+
                 const getPercentChangeColor = (percent) => {
                   if (percent > 0) return "token-price-green";
                   if (percent < 0) return "token-price-red";
