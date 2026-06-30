@@ -42,7 +42,7 @@ const CashbackModal = ({ promo, onClose, onDeposit }) => (
 
         {/* Badge */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
-          <span className="cb-badge">✦ Limited time · July 1 – July 7</span>
+          <span className="cb-badge">✦ Limited time · July 4 – July 7</span>
         </div>
 
         {/* Headline */}
@@ -93,7 +93,7 @@ const CashbackModal = ({ promo, onClose, onDeposit }) => (
           <div className="cb-info-card">
             <div className="cb-section-badge">📅 Period</div>
             <div style={{ fontSize: "1.6rem", fontWeight: 900, lineHeight: 1.15 }}>
-              JULY 1
+              JULY 4
               <br />
               <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "1rem" }}>–</span>{" "}
               <span className="cb-shimmer-text">JULY 7</span>
