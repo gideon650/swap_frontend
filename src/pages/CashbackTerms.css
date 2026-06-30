@@ -1,0 +1,129 @@
+.ct-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0e0010 0%, #1a001a 50%, #2a0030 100%);
+  color: #fff;
+  padding: 2rem 1rem 4rem;
+}
+
+.ct-container {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.ct-back-btn {
+  background: rgba(128, 0, 128, 0.25);
+  border: 1px solid rgba(180, 0, 180, 0.4);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+.ct-back-btn:hover {
+  background: rgba(128, 0, 128, 0.5);
+  color: #fff;
+}
+
+.ct-back-btn-bottom {
+  margin-top: 2rem;
+  margin-bottom: 0;
+}
+
+.ct-title {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 0 0 0.3rem;
+}
+
+@keyframes ct-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.ct-shimmer-text {
+  background: linear-gradient(90deg, #800080 0%, #b44fb4 25%, #ffffff 50%, #b44fb4 75%, #800080 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ct-shimmer 3.5s linear infinite;
+}
+
+.ct-subtitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #d966d6;
+  margin: 0 0 2rem;
+}
+
+.ct-section {
+  border-radius: 16px;
+  border: 1px solid rgba(128, 0, 128, 0.35);
+  background: rgba(10, 0, 10, 0.6);
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.ct-section h2 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 0.6rem;
+}
+
+.ct-section p {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0 0 0.6rem;
+}
+
+.ct-section p:last-child {
+  margin-bottom: 0;
+}
+
+.ct-section ul {
+  margin: 0 0 0.6rem;
+  padding-left: 1.2rem;
+}
+
+.ct-section ul:last-child {
+  margin-bottom: 0;
+}
+
+.ct-section li {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.ct-example-box {
+  background: rgba(128, 0, 128, 0.15);
+  border: 1px solid rgba(180, 0, 180, 0.3);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  margin: 0.6rem 0;
+  font-size: 0.85rem;
+}
+
+.ct-example-box strong {
+  color: #d966d6;
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+.ct-example-box ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.ct-example-box li {
+  color: rgba(255, 255, 255, 0.8);
+}

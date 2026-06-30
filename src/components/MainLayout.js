@@ -18,6 +18,7 @@ import FirebaseService from "../services/firebaseService";
 import useAutoLogout from "../hooks/useAutoLogout";
 import TermsModal from './TermsModal';
 import Condition from '../pages/condition';
+import CashbackTerms from "../pages/CashbackTerms";
 
 const MainLayout = () => {
   const location = useLocation();
@@ -220,6 +221,7 @@ const MainLayout = () => {
         <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
         <Route path="/terms" element={<PrivateRoute><TermsModal /></PrivateRoute>} />
         <Route path="/condition" element={<PrivateRoute><Condition /></PrivateRoute>} />
+        <Route path="/cashback-terms" element={<PrivateRoute><CashbackTerms /></PrivateRoute>} />
         
       </Routes>
     </div>
