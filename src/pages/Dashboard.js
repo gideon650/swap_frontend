@@ -1,8 +1,26 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import axios from "axios";
+import { usePrices } from "../context/PriceContext";
 import { useNavigate } from "react-router-dom";
+import {
+  FaCog,
+  FaWallet,
+  FaArrowCircleDown,
+  FaShoppingCart,
+  FaUserPlus,
+  FaArrowUp,
+  FaArrowDown,
+  FaEye,
+  FaEyeSlash,
+  FaSearch,
+} from "react-icons/fa";
 import "./Dashboard.css";
+import logoGlyph from "../assets/images/logo-glyph.png";
 import CashbackModal, { useCashbackPromo } from "./CashbackModal";
+// If Dashboard.js does not live in the same folder as NotificationBadge.js,
+// adjust this path (Navbar.js currently imports it as "../pages/NotificationBadge")
+import NotificationBadge from "./NotificationBadge";
+import DepositNotificationBadge from "./DepositNotificationBadge";
 
 const Dashboard = () => {
   const [portfolio, setPortfolio] = useState(null);
@@ -10,15 +28,38 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showStarTiersModal, setShowStarTiersModal] = useState(false);
-  const trendingRef = useRef(null);
+  const [showBalance, setShowBalance] = useState(true);
   const navigate = useNavigate();
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  // Drives which animated background scene shows behind the balance amount.
+  // Cycles through 5 scenes based on the current hour, same idea as the
+  // reference balance hero's rotating animation.
+  const [sceneIndex, setSceneIndex] = useState(() => new Date().getHours() % 5);
 
   // Cashback promo hook
   const { cashbackPromo, showCashbackModal, setShowCashbackModal } = useCashbackPromo();
+
+  // Live price overlay — `prices` below stays the once-fetched REST snapshot
+  // (name, image, price_24h_ago, etc.); livePrices patches price_usd/percent_change
+  // on top of it from the WebSocket feed.
+  const { prices: livePriceMap } = usePrices();
+  const livePrices = useMemo(() => {
+    return prices.map((p) => {
+      const live = livePriceMap[p.symbol];
+      if (!live) return p;
+      const percentChange24h = p.price_24h_ago
+        ? Math.round(((live.price_usd - p.price_24h_ago) / p.price_24h_ago) * 10000) / 100
+        : p.percent_change_24h;
+      return {
+        ...p,
+        price_usd: live.price_usd,
+        prev_price_usd: live.prev_price_usd,
+        percent_change: live.percent_change, // tick-based — unchanged, still drives the Tokens list
+        change: live.percent_change > 0 ? "up" : live.percent_change < 0 ? "down" : "same",
+        percent_change_24h: percentChange24h, // true 24h — Trending only
+      };
+    });
+  }, [prices, livePriceMap]);
 
   // Filter function to exclude USDT
   const filterOutUSDT = (tokens) => {
@@ -62,6 +103,13 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Keep the balance-card background scene in sync with the current hour
+  useEffect(() => {
+    const tick = () => setSceneIndex(new Date().getHours() % 5);
+    const id = setInterval(tick, 60000);
+    return () => clearInterval(id);
+  }, []);
+
   const getStarRating = (balance) => {
     let filledStars = 0;
     if (balance >= 5000) filledStars = 5;
@@ -80,29 +128,16 @@ const Dashboard = () => {
     return (1001 - currentBalance).toFixed(2);
   };
 
-  const getPriceChangeColor = (token) => {
-    if (token.change === "up") return "token-price-green";
-    if (token.change === "down") return "token-price-red";
+  const getPercentChangeColor = (percent) => {
+    if (percent > 0) return "token-price-green";
+    if (percent < 0) return "token-price-red";
     return "";
   };
 
-  const getPercentChangeColor = (token) => {
-    if (token.percent_change > 0) return "token-price-green";
-    if (token.percent_change < 0) return "token-price-red";
-    return "";
-  };
-
-  const getPriceChangeArrow = (token) => {
-    if (token.change === "up") return <span className="price-arrow">▲</span>;
-    if (token.change === "down") return <span className="price-arrow">▼</span>;
+  const getPriceChangeArrow = (change) => {
+    if (change === "up") return <span className="price-arrow">▲</span>;
+    if (change === "down") return <span className="price-arrow">▼</span>;
     return null;
-  };
-
-  const scrollTrending = (direction) => {
-    if (trendingRef.current) {
-      const scrollAmount = direction === "left" ? -200 : 200;
-      trendingRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
-    }
   };
 
   const handleTokenClick = (symbol) => {
@@ -113,13 +148,13 @@ const Dashboard = () => {
     if (messageType === 'deposit') {
       setShowStarTiersModal(true);
     } else if (messageType === 'referral') {
-      navigate('/wallet?tab=referral');
+      navigate('/invite');
     }
   };
 
   const handleCloseModal = () => {
     setShowStarTiersModal(false);
-    navigate('/wallet?tab=deposit');
+    navigate('/deposit');
   };
 
   const getMessages = () => {
@@ -142,34 +177,25 @@ const Dashboard = () => {
     return messages;
   };
 
-  const handleTouchStart = (e) => {
-    setIsDragging(true);
-    setStartX(e.touches[0].pageX - trendingRef.current.offsetLeft);
-    setScrollLeft(trendingRef.current.scrollLeft);
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const x = e.touches[0].pageX - trendingRef.current.offsetLeft;
-    const walk = (x - startX) * 2;
-    trendingRef.current.scrollLeft = scrollLeft - walk;
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-  };
-
-  const filteredTrendingTokens = prices.filter(
+  // Trending = top 4 tokens by 24h % gain (price_24h_ago -> current live price).
+  // Uses percent_change_24h, NOT percent_change — that one stays tick-based and
+  // keeps driving the Tokens list / everywhere else in the app unchanged.
+  const searchedTokens = livePrices.filter(
     (token) =>
       token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       token.symbol.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const trendingTokens = [...searchedTokens].sort(
+    (a, b) => b.percent_change_24h - a.percent_change_24h
+  );
+  // Always exactly 4 (or fewer if there aren't 4 tokens yet) — drives the grid layout below.
+  const visibleTrendingTokens = trendingTokens.slice(0, 4);
+
   const sortedUserTokens = portfolio?.tokens
     ? filterOutUSDT([...portfolio.tokens]).sort((a, b) => {
-        const priceA = prices.find((p) => p.symbol === a.symbol)?.price_usd || 0;
-        const priceB = prices.find((p) => p.symbol === b.symbol)?.price_usd || 0;
+        const priceA = livePrices.find((p) => p.symbol === a.symbol)?.price_usd || 0;
+        const priceB = livePrices.find((p) => p.symbol === b.symbol)?.price_usd || 0;
         const valueA = parseFloat(a.balance) * priceA;
         const valueB = parseFloat(b.balance) * priceB;
         return valueB - valueA;
@@ -179,9 +205,8 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="dashboard-container">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <span>Loading your portfolio...</span>
+        <div className="logo-loading-screen">
+          <img src={logoGlyph} alt="" className="logo-loading-glyph" />
         </div>
       </div>
     );
@@ -213,18 +238,45 @@ const Dashboard = () => {
           onClose={() => setShowCashbackModal(false)}
           onDeposit={() => {
             setShowCashbackModal(false);
-            navigate('/wallet?tab=deposit');
+            navigate('/deposit');
           }}
         />
       )}
 
       <header className="dashboard-header">
-        <h1>SWAPVIEW</h1>
+        <button
+          className="header-settings-btn"
+          onClick={() => navigate('/settings')}
+          aria-label="Settings"
+        >
+          <FaCog />
+          <NotificationBadge />
+        </button>
+        <div className="dashboard-header-title">
+          <img src={logoGlyph} alt="" className="dashboard-header-icon" />
+          SWAPVIEW
+        </div>
       </header>
 
       <main className="dashboard-content">
+
+        {/* Search bar — single row at the top of the page */}
+        <div className="dashboard-search-row">
+          <div className="search-input-wrapper">
+            <FaSearch className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search tokens..."
+              className="token-search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
         {/* User Info and Balance */}
         <section className="balance-card">
+          <BalanceScene index={sceneIndex} />
           {portfolio && (
             <>
               <div className="user-info">
@@ -235,16 +287,50 @@ const Dashboard = () => {
               </div>
 
               <div className="main-balance-amount">
-                <span>
-                  {parseFloat(portfolio.balance_usd || 0).toFixed(2)}
-                  <span
-                    style={{ fontSize: "0.4em", marginLeft: "4px" }}
-                    lang="he"
-                  >
-                    USD
-                  </span>
+                <span className="balance-value">
+                  {showBalance ? (
+                    <>
+                      {parseFloat(portfolio.balance_usd || 0).toFixed(2)}
+                      <span
+                        style={{ fontSize: "0.4em", marginLeft: "4px" }}
+                        lang="he"
+                      >
+                        USD
+                      </span>
+                    </>
+                  ) : (
+                    "••••••"
+                  )}
                 </span>
-                <div className="balance-label">Available Balance</div>
+                <button
+                  className="balance-eye-btn"
+                  onClick={() => setShowBalance((v) => !v)}
+                  aria-label={showBalance ? "Hide balance" : "Show balance"}
+                >
+                  {showBalance ? <FaEye /> : <FaEyeSlash />}
+                </button>
+              </div>
+              <div className="balance-label">Available Balance</div>
+
+              {/* Quick actions: Fund (②) / Withdraw (③) / Buy (Ⓐ) / Invite (Ⓑ) */}
+              <div className="quick-actions">
+                <button className="quick-action-btn" onClick={() => navigate('/deposit')} style={{ position: 'relative' }}>
+                  <span className="quick-action-icon"><FaWallet /></span>
+                  <span>Fund</span>
+                  <DepositNotificationBadge />
+                </button>
+                <button className="quick-action-btn" onClick={() => navigate('/withdraw')}>
+                  <span className="quick-action-icon"><FaArrowCircleDown /></span>
+                  <span>Withdraw</span>
+                </button>
+                <button className="quick-action-btn" onClick={() => navigate('/trade')}>
+                  <span className="quick-action-icon"><FaShoppingCart /></span>
+                  <span>Buy</span>
+                </button>
+                <button className="quick-action-btn" onClick={() => navigate('/invite')}>
+                  <span className="quick-action-icon"><FaUserPlus /></span>
+                  <span>Invite</span>
+                </button>
               </div>
             </>
           )}
@@ -252,86 +338,63 @@ const Dashboard = () => {
 
         {/* Trending Tokens */}
         <section className="trending-section">
-          <div className="mobile-search-container">
-            <input
-              type="text"
-              placeholder="Search tokens..."
-              className="token-search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
           <div className="trending-header-container">
-            <h2>TRENDING</h2>
-            <div className="desktop-search-container">
-              <input
-                type="text"
-                placeholder="Search tokens..."
-                className="token-search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="trending-title-row">
+              <button
+                className="trend-filter-btn gainers"
+                onClick={() => navigate('/tokens/gainers')}
+                aria-label="Top gainers"
+                title="Top gainers"
+              >
+                <FaArrowUp />
+              </button>
+              <button
+                className="trend-filter-btn losers"
+                onClick={() => navigate('/tokens/losers')}
+                aria-label="Top losers"
+                title="Top losers"
+              >
+                <FaArrowDown />
+              </button>
+              <h2>TRENDING</h2>
             </div>
           </div>
 
-          <div className="trending-grid-container">
-            <button
-              className="scroll-button left"
-              onClick={() => scrollTrending("left")}
-            >
-              &lt;
-            </button>
+          {visibleTrendingTokens.length === 0 ? (
+            <p className="trending-empty">No tokens available yet.</p>
+          ) : (
             <div
-              className="trending-grid"
-              ref={trendingRef}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
+              className={`trending-grid-layout trending-count-${visibleTrendingTokens.length}`}
             >
-              {filteredTrendingTokens.map((token, index) => (
-                <div
-                  key={index}
-                  className="trending-token-card"
-                  onClick={() => handleTokenClick(token.symbol)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <div className="token-card-header">
-                    <div className="token-image-wrapper">
-                      <img
-                        src={token.image_url || "/default-token.png"}
-                        alt={token.symbol}
-                        className="token-image"
-                      />
-                    </div>
-                    <div>
-                      <h3 className="token-name">{token.name}</h3>
-                      <span className="token-symbol">{token.symbol}</span>
-                    </div>
-                  </div>
-
-                  <div className={`token-price ${getPriceChangeColor(token)}`}>
-                    <span className="price-value">
-                      ${token.price_usd.toFixed(5)}
-                    </span>
-                    {getPriceChangeArrow(token)}
-                    <span
-                      className={`percent-change ${getPercentChangeColor(token)}`}
-                    >
-                      {token.percent_change > 0 ? "+" : ""}
-                      {token.percent_change}%
+              {visibleTrendingTokens.map((token, index) => {
+                // With 3 trending tokens: first two sit side by side, the third
+                // spans the full width on the row below.
+                const isSpanFull = visibleTrendingTokens.length === 3 && index === 2;
+                return (
+                  <div
+                    key={token.symbol}
+                    className={`trending-slim-card ${isSpanFull ? "trending-item-full" : ""}`}
+                    onClick={() => handleTokenClick(token.symbol)}
+                  >
+                    <span className="trending-slim-symbol">{token.symbol}</span>
+                    <span className="trending-slim-price">${token.price_usd.toFixed(3)}</span>
+                    <span className={`trending-slim-change ${getPercentChangeColor(token.percent_change_24h)}`}>
+                      {getPriceChangeArrow(token.percent_change_24h > 0 ? "up" : token.percent_change_24h < 0 ? "down" : "same")}
+                      {token.percent_change_24h > 0 ? "+" : ""}
+                      {token.percent_change_24h}%
                     </span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-            <button
-              className="scroll-button right"
-              onClick={() => scrollTrending("right")}
-            >
-              &gt;
-            </button>
-          </div>
+          )}
+
+          <button
+            className="trending-see-more-btn"
+            onClick={() => navigate('/tokens')}
+          >
+            See more
+          </button>
         </section>
 
         {/* Sliding Messages Section */}
@@ -360,9 +423,9 @@ const Dashboard = () => {
           </div>
 
           {sortedUserTokens.length > 0 ? (
-            <div className="user-tokens-list">
+            <div className="token-row-list">
               {sortedUserTokens.map((token) => {
-                const priceData = prices.find((p) => p.symbol === token.symbol);
+                const priceData = livePrices.find((p) => p.symbol === token.symbol);
                 const tokenValue = priceData
                   ? parseFloat(token.balance) * priceData.price_usd
                   : 0;
@@ -370,24 +433,11 @@ const Dashboard = () => {
                 const percentChange = priceData?.percent_change || 0;
                 const changeType = priceData?.change || "neutral";
 
-                const getPercentChangeColor = (percent) => {
-                  if (percent > 0) return "token-price-green";
-                  if (percent < 0) return "token-price-red";
-                  return "";
-                };
-
-                const getPriceChangeArrow = (change) => {
-                  if (change === "up") return <span className="price-arrow">▲</span>;
-                  if (change === "down") return <span className="price-arrow">▼</span>;
-                  return null;
-                };
-
                 return (
                   <div
                     key={token.symbol}
-                    className="user-token-card"
+                    className="token-row-card"
                     onClick={() => navigate(`/trade?token=${token.symbol}`)}
-                    style={{ cursor: "pointer" }}
                   >
                     <div className="token-image-wrapper">
                       <img
@@ -396,22 +446,26 @@ const Dashboard = () => {
                         className="token-image"
                       />
                     </div>
-                    <div className="user-token-info">
-                      <div className="user-token-name">
-                        {token.name} <span className="token-symbol">{token.symbol}</span>
+                    <div className="token-row-info">
+                      <div className="token-row-name">
+                        {token.symbol} <span className="token-symbol">{token.name}</span>
                       </div>
-                      <div className="user-token-value">
-                        $
-                        {tokenValue.toLocaleString(undefined, {
+                      {priceData && (
+                        <div className="token-row-price">${priceData.price_usd.toFixed(3)}</div>
+                      )}
+                    </div>
+                    <div className="token-row-right">
+                      <div className="token-row-value">
+                        ${tokenValue.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 5,
                         })}
                       </div>
-                    </div>
-                    <div className={`user-token-change ${getPercentChangeColor(percentChange)}`}>
-                      {getPriceChangeArrow(changeType)}
-                      {percentChange > 0 ? "+" : ""}
-                      {percentChange}%
+                      <div className={`token-row-change ${getPercentChangeColor(percentChange)}`}>
+                        {getPriceChangeArrow(changeType)}
+                        {percentChange > 0 ? "+" : ""}
+                        {percentChange}%
+                      </div>
                     </div>
                   </div>
                 );
@@ -429,3 +483,109 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+/* ---------------- Balance card background animation ---------------- */
+/* Small coin badge used by every scene below. */
+function BalanceCoin({ char, tone }) {
+  return (
+    <span className={`balance-coin ${tone === "gold" ? "balance-coin-gold" : "balance-coin-purple"}`}>
+      {char}
+    </span>
+  );
+}
+
+/* Picks and renders one of the rotating background scenes. */
+function BalanceScene({ index }) {
+  const scenes = [Scene0, Scene1, Scene2, Scene3, Scene4];
+  const Scene = scenes[index % scenes.length] || Scene0;
+  return (
+    <div className="balance-scene-layer" aria-hidden="true">
+      <Scene />
+    </div>
+  );
+}
+
+/* Scene 0 — coins crossing the card horizontally, opposite directions */
+function Scene0() {
+  return (
+    <>
+      <div className="balance-scene-row balance-scene-row-top">
+        <BalanceCoin char="$" tone="gold" />
+      </div>
+      <div className="balance-scene-row balance-scene-row-bottom">
+        <BalanceCoin char="₿" tone="purple" />
+      </div>
+    </>
+  );
+}
+
+/* Scene 1 — coins orbiting a ring, like the swap FAB */
+function Scene1() {
+  return (
+    <div className="balance-scene-orbit-wrap">
+      <div className="balance-scene-orbit-ring" />
+      <div className="balance-scene-orbit-coin balance-scene-orbit-coin-top">
+        <BalanceCoin char="$" tone="gold" />
+      </div>
+      <div className="balance-scene-orbit-coin balance-scene-orbit-coin-bottom">
+        <BalanceCoin char="₿" tone="purple" />
+      </div>
+    </div>
+  );
+}
+
+/* Scene 2 — swap arrows with floating coins at each end */
+function Scene2() {
+  return (
+    <>
+      <svg viewBox="0 0 100 100" className="balance-scene-arrows" preserveAspectRatio="none">
+        <g stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
+          <path d="M20 35 H75 L65 25" className="balance-scene-float" />
+          <path d="M80 65 H25 L35 75" className="balance-scene-float" style={{ animationDelay: "1s" }} />
+        </g>
+      </svg>
+      <div className="balance-scene-float-coin balance-scene-float-coin-left">
+        <BalanceCoin char="$" tone="gold" />
+      </div>
+      <div className="balance-scene-float-coin balance-scene-float-coin-right" style={{ animationDelay: "1.4s" }}>
+        <BalanceCoin char="₿" tone="purple" />
+      </div>
+    </>
+  );
+}
+
+/* Scene 3 — coin rain drifting up and down across a center line */
+function Scene3() {
+  const coins = [
+    { left: "10%", delay: "0s", tone: "gold", char: "$" },
+    { left: "35%", delay: "0.6s", tone: "purple", char: "₿" },
+    { left: "62%", delay: "1.2s", tone: "gold", char: "$" },
+    { left: "85%", delay: "0.3s", tone: "purple", char: "₿" },
+  ];
+  return (
+    <>
+      {coins.map((c, i) => (
+        <div key={i} className="balance-scene-rain-coin" style={{ left: c.left, animationDelay: c.delay }}>
+          <BalanceCoin char={c.char} tone={c.tone} />
+        </div>
+      ))}
+      <div className="balance-scene-rain-line" />
+    </>
+  );
+}
+
+/* Scene 4 — two people (circles) exchanging coins along arced paths */
+function Scene4() {
+  return (
+    <>
+      <div className="balance-scene-person balance-scene-person-left" />
+      <div className="balance-scene-person balance-scene-person-right" />
+      <div className="balance-scene-arc balance-scene-arc-top">
+        <BalanceCoin char="$" tone="gold" />
+      </div>
+      <div className="balance-scene-arc balance-scene-arc-bottom">
+        <BalanceCoin char="₿" tone="purple" />
+      </div>
+    </>
+  );
+}

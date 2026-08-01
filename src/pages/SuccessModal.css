@@ -1,0 +1,317 @@
+/* SwapView Success Modal — purple/gold themed */
+
+.swm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 3, 8, 0.78);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  overflow-y: auto;
+  animation: swm-fade-in 0.25s ease;
+}
+
+.swm-container {
+  width: 100%;
+  max-width: 440px;
+  margin: auto;
+}
+
+.swm-card {
+  --swm-purple: #800080;
+  --swm-purple-2: #9b1f9b;
+  --swm-purple-3: #c060c0;
+  --swm-gold: #f5c451;
+  --swm-bg: #120a1a;
+  --swm-panel: rgba(28, 14, 42, 0.65);
+  --swm-border: rgba(180, 130, 255, 0.22);
+  --swm-text: #f5f0ff;
+  --swm-muted: #a99cbf;
+
+  position: relative;
+  background: linear-gradient(160deg, #150c1f 0%, #1d0f2b 55%, #241033 100%);
+  border: 1px solid var(--swm-border);
+  border-radius: 26px;
+  padding: 34px 26px 26px;
+  color: var(--swm-text);
+  box-shadow: 0 30px 80px -20px rgba(128, 0, 128, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  animation: swm-rise 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden;
+}
+
+.swm-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(420px 160px at 85% -10%, rgba(245, 196, 81, 0.18), transparent 60%);
+  pointer-events: none;
+}
+
+.swm-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--swm-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--swm-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: 0.2s;
+  z-index: 2;
+}
+.swm-close:hover {
+  color: var(--swm-text);
+  border-color: var(--swm-purple-3);
+  transform: rotate(90deg);
+}
+
+/* Badge / icon */
+.swm-badge-wrap {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  margin: 4px auto 22px;
+}
+.swm-badge-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(245, 196, 81, 0.35), transparent 60%),
+    linear-gradient(135deg, var(--swm-purple) 0%, var(--swm-purple-2) 55%, var(--swm-purple-3) 100%);
+  animation: swm-pulse-ring 2.2s ease-in-out infinite;
+}
+.swm-badge-core {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--swm-bg);
+  display: grid;
+  place-items: center;
+}
+.swm-badge-check {
+  width: 46px;
+  height: 46px;
+}
+.swm-badge-check circle {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 145;
+  stroke-dashoffset: 145;
+  animation: swm-draw 0.6s ease forwards 0.15s;
+}
+.swm-badge-check path {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: swm-draw 0.35s ease forwards 0.65s;
+}
+
+/* Typography */
+.swm-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+}
+.swm-message {
+  text-align: center;
+  font-size: 14px;
+  color: var(--swm-muted);
+  line-height: 1.6;
+  margin: 0 0 22px;
+}
+
+/* Details */
+.swm-details {
+  background: var(--swm-panel);
+  border: 1px solid var(--swm-border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 18px;
+}
+.swm-details-head {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--swm-purple-3);
+  margin: 0 0 12px;
+  text-align: center;
+}
+.swm-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--swm-border);
+  font-size: 13px;
+}
+.swm-detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.swm-detail-label {
+  color: var(--swm-muted);
+}
+.swm-detail-value {
+  font-weight: 700;
+  color: var(--swm-gold);
+}
+
+/* Notice */
+.swm-notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(245, 196, 81, 0.07);
+  border: 1px solid rgba(245, 196, 81, 0.22);
+  border-radius: 14px;
+  padding: 13px 14px;
+  margin-bottom: 18px;
+}
+.swm-notice-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(245, 196, 81, 0.18);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--swm-gold);
+}
+.swm-notice-body h4 {
+  margin: 0 0 3px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #e3d5a8;
+}
+.swm-notice-body p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #cbb98a;
+}
+
+/* Progress */
+.swm-progress {
+  margin-bottom: 22px;
+}
+.swm-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.swm-progress-fill {
+  height: 100%;
+  width: 30%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--swm-purple-2), var(--swm-gold));
+  animation: swm-progress-pulse 1.8s ease-in-out infinite;
+}
+.swm-progress-label {
+  text-align: center;
+  font-size: 12px;
+  color: var(--swm-muted);
+}
+.swm-progress-label strong {
+  color: var(--swm-text);
+  font-weight: 700;
+}
+
+/* Actions */
+.swm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.swm-btn {
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 0;
+  transition: 0.2s;
+}
+.swm-btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, #800080 0%, #9b1f9b 50%, #c060c0 100%);
+  box-shadow: 0 12px 34px -10px rgba(128, 0, 128, 0.65);
+}
+.swm-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 42px -10px rgba(128, 0, 128, 0.8);
+}
+.swm-btn-secondary {
+  background: transparent;
+  border: 1.5px solid var(--swm-purple-3);
+  color: var(--swm-purple-3);
+}
+.swm-btn-secondary:hover {
+  background: rgba(192, 96, 192, 0.1);
+}
+
+/* Support */
+.swm-support {
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--swm-border);
+  font-size: 12px;
+  color: var(--swm-muted);
+}
+.swm-support a {
+  color: var(--swm-gold);
+  text-decoration: none;
+  font-weight: 700;
+}
+.swm-support a:hover {
+  text-decoration: underline;
+}
+
+/* Animations */
+@keyframes swm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes swm-rise {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes swm-pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(192, 96, 192, 0.35); }
+  50% { box-shadow: 0 0 0 14px rgba(192, 96, 192, 0); }
+}
+@keyframes swm-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes swm-progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .swm-card { padding: 28px 18px 20px; border-radius: 22px; }
+  .swm-title { font-size: 19px; }
+  .swm-badge-wrap { width: 78px; height: 78px; }
+  .swm-detail-row { font-size: 12.5px; }
+}
+
+body.swm-modal-open {
+  overflow: hidden;
+}

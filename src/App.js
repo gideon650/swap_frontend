@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { HashRouter as Router } from "react-router-dom";
 import MainLayout from "./components/MainLayout";
+import { PriceProvider } from "./context/PriceContext";
 import "./App.css";
 
 const App = () => {
@@ -23,7 +24,9 @@ const App = () => {
 
   return (
     <Router>
-      <MainLayout />
+      <PriceProvider>
+        <MainLayout />
+      </PriceProvider>
     </Router>
   );
 };

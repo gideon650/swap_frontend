@@ -4,6 +4,21 @@ import { FaUser, FaCopy, FaCheck } from "react-icons/fa";
 import axios from "axios";
 import "./profile.css";
 
+// Moved FormGroup OUTSIDE the Profile component to prevent re-rendering issues
+const FormGroup = ({ type, placeholder, value, onChange, ariaLabel, name }) => (
+  <div className="form-group">
+    <input
+      type={type}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      aria-label={ariaLabel}
+      autoComplete="off"
+      name={name}
+    />
+  </div>
+);
+
 const Profile = () => {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState({
@@ -23,6 +38,7 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+  
   // Fetch user data on component mount
   useEffect(() => {
     const fetchUserData = async () => {
@@ -180,20 +196,6 @@ const Profile = () => {
       setCopied({ ...copied, [type]: false });
     }, 2000);
   };
-
-  const FormGroup = ({ type, placeholder, value, onChange, ariaLabel, name }) => (
-    <div className="form-group">
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        aria-label={ariaLabel}
-        autoComplete="off"
-        name={name}
-      />
-    </div>
-  );
 
   return (
     <div className="profile-container">

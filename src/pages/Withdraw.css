@@ -53,28 +53,6 @@
   color: gold; /* Changed to gold color */
 }
 
-/* Invite & Earn link card — points to the standalone /invite page */
-.wallet-invite-link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 16px;
-  padding: 16px 18px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(217, 70, 239, 0.18), rgba(139, 92, 246, 0.08));
-  border: 1px solid rgba(217, 70, 239, 0.3);
-  color: #f5d0fe;
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: transform 0.15s, background 0.15s;
-}
-.wallet-invite-link:hover {
-  background: linear-gradient(135deg, rgba(217, 70, 239, 0.26), rgba(139, 92, 246, 0.12));
-  transform: translateY(-1px);
-}
-
 /* Rest of the CSS remains the same... */
 .wallet-tabs {
   display: flex;

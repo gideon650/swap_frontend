@@ -3,6 +3,12 @@ import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Dashboard from "../pages/Dashboard";
 import Trade from "../pages/Trade";
 import Wallet from "../pages/Wallet";
+import Assets from "../pages/Assets";
+import History from "../pages/History";
+import Invite from "../pages/Invite";
+import Withdraw from "../pages/Withdraw";
+import WithdrawPin from "../pages/WithdrawPin";
+import Deposit from "../pages/Deposit";
 import Swap from '../pages/Swap';
 import Navbar from "./Navbar";
 import Auth from "../pages/Auth";
@@ -19,6 +25,8 @@ import useAutoLogout from "../hooks/useAutoLogout";
 import TermsModal from './TermsModal';
 import Condition from '../pages/condition';
 import CashbackTerms from "../pages/CashbackTerms";
+import AllTokens from "../pages/AllTokens";
+import TrendingTokens from "../pages/TrendingTokens";
 
 const MainLayout = () => {
   const location = useLocation();
@@ -211,6 +219,12 @@ const MainLayout = () => {
         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/trade" element={<PrivateRoute><Trade /></PrivateRoute>} />
         <Route path="/wallet" element={<PrivateRoute><Wallet /></PrivateRoute>} />
+        <Route path="/assets" element={<PrivateRoute><Assets /></PrivateRoute>} />
+        <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />
+        <Route path="/invite" element={<PrivateRoute><Invite /></PrivateRoute>} />
+        <Route path="/withdraw" element={<PrivateRoute><Withdraw /></PrivateRoute>} />
+        <Route path="/withdraw/pin" element={<PrivateRoute><WithdrawPin /></PrivateRoute>} />
+        <Route path="/deposit" element={<PrivateRoute><Deposit /></PrivateRoute>} />
         <Route path="/swap" element={<PrivateRoute><Swap /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
@@ -222,6 +236,8 @@ const MainLayout = () => {
         <Route path="/terms" element={<PrivateRoute><TermsModal /></PrivateRoute>} />
         <Route path="/condition" element={<PrivateRoute><Condition /></PrivateRoute>} />
         <Route path="/cashback-terms" element={<PrivateRoute><CashbackTerms /></PrivateRoute>} />
+        <Route path="/tokens" element={<PrivateRoute><AllTokens /></PrivateRoute>} />
+        <Route path="/tokens/:type" element={<PrivateRoute><TrendingTokens /></PrivateRoute>} />
         
       </Routes>
     </div>

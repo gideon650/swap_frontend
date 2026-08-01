@@ -1,99 +1,459 @@
-/* Swap.css - Updated to match the design */
-.swap-container {
-  background-color: #000000;
+/* Swap.css — redesigned to match the reference layout.
+   The swap-logo-image button and the black page background are kept
+   exactly as they were in the previous version of this file. */
+
+/* ===== Design tokens (ported from reference) ===== */
+:root {
+  --sw-bg: #000000;
+  --sw-panel-solid: #1a0f24;
+  --sw-border: rgba(255, 255, 255, 0.1);
+  --sw-purple: #8b3ddb;
+  --sw-purple-bright: #b060f0;
+  --sw-purple-deep: #4a1a73;
+  --sw-gold: #e0b86a;
+  --sw-gold-deep: #b98a3f;
+  --sw-gold-light: #fbedc9;
+  --gradient-sw-purple: linear-gradient(135deg, #5a2a8f, #9440d6 55%, #c973f0);
+  --gradient-sw-gold: linear-gradient(135deg, var(--sw-gold-deep) 0%, var(--sw-gold) 50%, var(--sw-gold-light) 100%);
+  --sw-gold-glow: 0 0 20px rgba(224, 184, 106, 0.55), inset 0 -2px 4px rgba(0, 0, 0, 0.25), inset 0 2px 3px rgba(255, 255, 255, 0.4);
+  --sw-shadow-card: 0 40px 100px -40px rgba(139, 61, 219, 0.55);
+}
+
+/* ===== Root / background — plain black, unchanged interface ===== */
+.sw-root {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--sw-bg);
   color: white;
-  padding: 40px 30px;
-  border-radius: 12px;
-  max-width: 400px;
-  margin: 30px auto;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
-  border: none;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
+.sw-grid { display: none; }
+.sw-bg-orb { display: none; }
 
-.swap-container h3 {
+/* ===== Page shell ===== */
+.sw-page {
+  position: relative;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+}
+
+/* ===== Header ===== */
+.sw-header {
+  margin-bottom: 28px;
   text-align: center;
-  margin-bottom: 40px;
-  color: white;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 1px;
+}
+.sw-title {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.sw-title-dim {
+  color: rgba(255, 255, 255, 0.9);
+}
+.sw-subtitle {
+  max-width: 380px;
+  margin: 10px auto 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
 }
 
-/* Form groups styling */
-.form-group {
-  margin-bottom: 25px;
+.sw-gold-shimmer {
+  background: linear-gradient(90deg, var(--sw-gold-deep) 0%, var(--sw-gold) 25%, #fff8dc 50%, var(--sw-gold) 75%, var(--sw-gold-deep) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: sw-text-shimmer 3.5s linear infinite;
+}
+@keyframes sw-text-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: white;
-  font-size: 16px;
+/* ===== Card ===== */
+.sw-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 28px 24px;
+  background: #0a0a0a;
+  border: 1px solid var(--sw-border);
+  box-shadow: 0 40px 100px -40px rgba(0, 0, 0, 0.9);
 }
 
-/* Input styling to match the design */
-.swap-container input,
-.swap-container select {
+/* ===== Fields ===== */
+.sw-field {
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+.sw-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.sw-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.6);
+}
+.sw-field-hint {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.4);
+}
+.sw-field-error {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #fca5a5;
+}
+
+/* ===== Inputs ===== */
+.sw-input {
   width: 100%;
-  padding: 18px 20px;
-  border: none;
-  border-radius: 25px;
-  background-color: #2a2a2a;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(10, 5, 15, 0.7);
+  border: 1px solid var(--sw-border);
   color: white;
-  font-size: 16px;
-  box-sizing: border-box;
   outline: none;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
+  font-size: 14px;
+  box-sizing: border-box;
 }
-
-.swap-container input::placeholder {
-  color: #888;
-  font-size: 16px;
+.sw-input:hover {
+  border-color: rgba(176, 96, 240, 0.4);
 }
-
-.swap-container input:focus {
-  background-color: #333;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+.sw-input:focus {
+  border-color: var(--sw-purple-bright);
+  box-shadow: 0 0 0 3px rgba(139, 61, 219, 0.25);
 }
-
-/* Disabled input styling */
-.disabled-input {
-  background-color: #2a2a2a !important;
-  color: #888 !important;
+.sw-input::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.6);
+  cursor: pointer;
+}
+.sw-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+.sw-input-amount {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.sw-input:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Error and success messages */
-.error-message {
-  color: #ff6b6b;
-  font-size: 13px;
+/* Locked rows (Swap From / Swap Back) */
+.sw-locked-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0.8;
+  cursor: default;
+}
+.sw-token-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sw-token-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+.sw-token-sub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+.sw-locked-pill {
+  border: 1px solid var(--sw-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.sw-token-badge {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  background: var(--gradient-sw-gold);
+  color: #3a2500;
+  box-shadow: var(--sw-gold-glow);
+  flex-shrink: 0;
+}
+
+/* ===== Divider with spinning swap icon ===== */
+.sw-divider {
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sw-divider-line {
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.15), transparent);
+}
+.sw-swap-btn {
+  margin: 0 12px;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: var(--gradient-sw-purple);
+  box-shadow: 0 0 30px rgba(176, 96, 240, 0.55);
+  color: white;
+  animation: sw-spin-btn 4s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes sw-spin-btn {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(180deg); }
+}
+
+/* ===== Dropdown ===== */
+.sw-dropdown-anchor {
+  position: relative;
+}
+.sw-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.sw-placeholder {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 14px;
+}
+.sw-chevron {
+  color: rgba(255, 255, 255, 0.6);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.sw-chevron-open {
+  transform: rotate(180deg);
+}
+
+.sw-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 30;
   margin-top: 8px;
-  margin-bottom: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  background: rgba(20, 10, 28, 0.98);
+  border: 1px solid var(--sw-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.7);
+  animation: sw-rise 0.2s ease-out;
 }
-
-.success-message {
-  color: #4ade80;
-  background-color: rgba(74, 222, 128, 0.1);
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 20px;
-  border-left: 4px solid #4ade80;
+@keyframes sw-rise {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sw-dropdown-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--sw-border);
+  color: rgba(255, 255, 255, 0.5);
+}
+.sw-dropdown-search-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
   font-size: 14px;
 }
-
-.status-message {
-  margin-top: 20px;
-  padding: 12px;
+.sw-dropdown-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+.sw-dropdown-list {
+  max-height: 256px;
+  overflow-y: auto;
+}
+.sw-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: white;
+  transition: background-color 0.2s ease;
+}
+.sw-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.sw-select-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.4);
+}
+.sw-no-results {
+  padding: 24px 12px;
   text-align: center;
-  font-size: 14px;
-  color: #c084fc;
-  background-color: rgba(192, 132, 252, 0.1);
-  border-radius: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+.sw-dropdown-list::-webkit-scrollbar {
+  width: 6px;
+}
+.sw-dropdown-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sw-dropdown-list::-webkit-scrollbar-thumb {
+  background: #666;
+  border-radius: 3px;
+}
+.sw-dropdown-list::-webkit-scrollbar-thumb:hover {
+  background: #888;
 }
 
-/* Swap Button Container - Centralized */
+/* ===== Duration field ===== */
+.sw-duration-wrap {
+  position: relative;
+}
+.sw-duration-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+.sw-duration-input {
+  padding-left: 44px;
+}
+
+/* ===== Messages ===== */
+.sw-message {
+  margin-top: 16px;
+  border-radius: 12px;
+  border: 1px solid;
+  padding: 12px 16px;
+  font-size: 13px;
+}
+.sw-message--ok {
+  border-color: rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.1);
+  color: #a7f3d0;
+}
+.sw-message--error {
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.1);
+  color: #fecaca;
+}
+.sw-status-pill {
+  margin-top: 16px;
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: #d8b4fe;
+  background: rgba(192, 132, 252, 0.1);
+  border-radius: 12px;
+}
+
+/* ===== 3D Gold Coin (ambient decoration) ===== */
+.sw-coin-wrap {
+  perspective: 600px;
+  pointer-events: none;
+}
+.sw-coin {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  animation: sw-coin-spin 3.5s linear infinite;
+}
+@keyframes sw-coin-spin {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+.sw-coin-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  color: #4a2f00;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.4);
+  backface-visibility: hidden;
+}
+.sw-coin-front,
+.sw-coin-back {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 22%),
+    radial-gradient(circle at 70% 75%, rgba(255, 240, 180, 0.35) 0%, rgba(255, 240, 180, 0) 35%),
+    radial-gradient(circle at 50% 50%, #ffe27a 0%, #f5c451 30%, #d69824 60%, #8a5a10 95%);
+  box-shadow:
+    inset 0 -8px 14px rgba(80, 40, 0, 0.75),
+    inset 0 8px 12px rgba(255, 240, 190, 0.65),
+    inset 0 0 0 2px rgba(180, 120, 20, 0.55),
+    inset 0 0 0 3px rgba(255, 220, 140, 0.35),
+    0 10px 24px -6px rgba(0, 0, 0, 0.75),
+    0 4px 10px rgba(0, 0, 0, 0.5);
+  border: 1px solid #6b4410;
+}
+.sw-coin-back {
+  transform: rotateY(180deg);
+}
+.sw-coin-edge {
+  transform: rotateY(90deg);
+  background: repeating-linear-gradient(90deg, #6b4410 0px, #d69824 2px, #ffe27a 3px, #d69824 4px, #6b4410 6px);
+  width: 6%;
+  left: 47%;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+.sw-float-a {
+  animation: sw-float-a 6s ease-in-out infinite;
+}
+.sw-float-b {
+  animation: sw-float-b 8s ease-in-out infinite;
+}
+@keyframes sw-float-a {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-22px) rotate(6deg); }
+}
+@keyframes sw-float-b {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-30px) rotate(-8deg); }
+}
+
+/* ===================================================== */
+/* Swap submit button — kept EXACTLY as the prior version */
+/* ===================================================== */
 .swap-button-container {
   display: flex;
   flex-direction: column;
@@ -104,7 +464,6 @@
   width: 100%;
 }
 
-/* Updated Logo Swap Button - Centralized */
 .swap-logo-image {
   width: 80px;
   height: 80px;
@@ -130,7 +489,6 @@
   transform: scale(0.95);
 }
 
-/* Loading text styling */
 .loading-text {
   position: absolute;
   color: white;
@@ -142,162 +500,37 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-/* Token Search Dropdown Styles */
-.token-search-container {
-  position: relative;
-}
-
-.search-dropdown-container {
-  position: relative;
-  width: 100%;
-}
-
-.token-dropdown {
-  position: absolute;
-  width: 100%;
-  max-height: 200px;
-  overflow-y: auto;
-  background-color: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 12px;
-  z-index: 10;
-  margin-top: 5px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-}
-
-.token-option {
-  padding: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #333;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.token-option:hover {
-  background-color: #2d2d2d;
-}
-
-.token-option:last-child {
-  border-bottom: none;
-}
-
-.token-name {
-  font-weight: 500;
-  color: white;
-}
-
-.token-symbol {
-  color: #c084fc;
-  font-size: 14px;
-  background-color: rgba(192, 132, 252, 0.1);
-  padding: 4px 8px;
-  border-radius: 6px;
-}
-
-.no-results {
-  padding: 20px;
-  text-align: center;
-  color: #888;
-  background-color: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 12px;
-  margin-top: 5px;
-}
-
-/* Mobile responsiveness */
+/* ===== Mobile responsiveness ===== */
 @media screen and (max-width: 480px) {
-  .swap-container {
-    max-width: 100%;
-    margin: 15px;
-    padding: 25px 20px;
-    border-radius: 8px;
+  .sw-page {
+    padding: 24px 12px 40px;
   }
-  
-  .swap-container input,
-  .swap-container select {
-    padding: 15px 18px;
-    font-size: 14px;
+  .sw-card {
+    padding: 22px 16px;
+    border-radius: 18px;
   }
-  
-  .swap-container h3 {
-    font-size: 18px;
-    margin-bottom: 30px;
+  .sw-title {
+    font-size: 28px;
   }
-  
-  .form-group {
-    margin-bottom: 20px;
-  }
-  
-  .form-group label {
-    font-size: 14px;
-  }
-  
-  .swap-button-container {
-    margin: 30px auto;
-  }
-  
   .swap-logo-image {
     width: 70px;
     height: 70px;
   }
-  
-  .token-dropdown {
-    max-height: 180px;
-  }
-  
-  .token-option {
-    padding: 12px;
+  .sw-dropdown-list {
+    max-height: 200px;
   }
 }
 
-/* For very small screens */
 @media screen and (max-width: 320px) {
-  .swap-container {
-    padding: 20px 15px;
-    margin: 10px;
+  .sw-card {
+    padding: 18px 12px;
   }
-  
-  .swap-container input,
-  .swap-container select {
-    padding: 12px 15px;
-    font-size: 13px;
-  }
-  
   .swap-logo-image {
     width: 60px;
     height: 60px;
   }
-  
-  .token-option {
-    padding: 10px;
-    font-size: 13px;
-  }
-}
-
-/* Custom scrollbar for dropdown */
-.token-dropdown::-webkit-scrollbar {
-  width: 6px;
-}
-
-.token-dropdown::-webkit-scrollbar-track {
-  background: #1a1a1a;
-}
-
-.token-dropdown::-webkit-scrollbar-thumb {
-  background: #666;
-  border-radius: 3px;
-}
-
-.token-dropdown::-webkit-scrollbar-thumb:hover {
-  background: #888;
 }

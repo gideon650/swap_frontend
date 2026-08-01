@@ -1,8 +1,11 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import { createChart } from "lightweight-charts";
 import { useSearchParams } from "react-router-dom";
 import "./Trade.css";
+import logoGlyph from "../assets/images/logo-glyph.png";
+import PnLCard from "../components/PnLCard/PnLCard";
+import { usePrices } from "../context/PriceContext";
 
 const INTERVAL_OPTIONS = [
   { label: "1m", value: "1min" },
@@ -19,24 +22,27 @@ const Trade = () => {
   const [amount, setAmount] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sellLoading, setSellLoading] = useState(false); // separate sell loader — only for sell-blocked users
+  const [sellLoading, setSellLoading] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [error, setError] = useState(null);
   const [tradeError, setTradeError] = useState(null);
-  const [inputType, setInputType] = useState("amount"); // "quantity" or "amount"
-  const [showGridlines, setShowGridlines] = useState(true); // New state for gridlines toggle
-  const [portfolio, setPortfolio] = useState(null); // Add portfolio state
+  const [inputType, setInputType] = useState("amount");
+  const [tradeSide, setTradeSide] = useState("buy");
+  const [showGridlines, setShowGridlines] = useState(true);
+  const [portfolio, setPortfolio] = useState(null);
+  const [pnlCardData, setPnlCardData] = useState(null);
   const chartContainerRef = useRef();
   const chartInstanceRef = useRef(null);
   const candleSeriesRef = useRef(null);
-  const [searchParams] = useSearchParams();
+  const trendLineSeriesRef = useRef(null);
+  const lastCandleRef = useRef(null); // most recently known candle — WS ticks patch this in place
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { prices: livePrices } = usePrices();
 
-  // Filter function to exclude USDT
   const filterOutUSDT = useCallback((tokens) => {
     return tokens.filter(asset => asset.symbol !== 'USDT');
   }, []);
 
-  // Function to get star rating based on balance
   const getStarRating = useCallback((balance) => {
     if (balance >= 5000) return 5;
     else if (balance >= 1001) return 4;
@@ -45,20 +51,17 @@ const Trade = () => {
     else return 1;
   }, []);
 
-  // Function to check if user can trade (2 stars or more)
   const canTrade = useCallback(() => {
     if (!portfolio) return false;
     const balance = Number(portfolio.balance_usd || 0);
     return getStarRating(balance) >= 2;
   }, [portfolio, getStarRating]);
 
-  // Function to get amount needed for 2 stars
   const getAmountForTwoStars = useCallback(() => {
     if (!portfolio) return 201;
     const balance = Number(portfolio.balance_usd || 0);
     return Math.max(0, 201 - balance);
   }, [portfolio]);
-  
 
   const filteredAssets = assets.filter(asset => {
     if (!searchTerm) return true;
@@ -69,10 +72,8 @@ const Trade = () => {
     );
   });
 
-  // Fetch portfolio data
   const fetchPortfolio = useCallback(async () => {
     try {
-      // Remove setPortfolioLoading(true);
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Token ${token}` } };
       const response = await axios.get(
@@ -83,7 +84,6 @@ const Trade = () => {
     } catch (error) {
       console.error("Error fetching portfolio:", error);
     }
-    // Remove setPortfolioLoading(false);
   }, []);
 
   const fetchCandlestickData = useCallback(async (symbol, intervalParam = interval) => {
@@ -111,7 +111,6 @@ const Trade = () => {
   useEffect(() => {
     const tokenFromUrl = searchParams.get('token');
     if (tokenFromUrl && assets.length > 0) {
-      // Only allow selection if the token exists and is not USDT
       const assetExists = assets.some(asset => asset.symbol === tokenFromUrl);
       if (assetExists && tokenFromUrl !== 'USDT') {
         setSelectedAsset(tokenFromUrl);
@@ -128,14 +127,28 @@ const Trade = () => {
       const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/crypto-prices/`, config);
       const assetList = response.data.cryptocurrencies || [];
       
-      // Filter out USDT from the assets list
       const filteredAssetList = filterOutUSDT(assetList);
       setAssets(filteredAssetList);
 
-      if (filteredAssetList.length > 0 && !searchParams.get('token')) {
-        setSelectedAsset(filteredAssetList[0].symbol);
-        fetchCandlestickData(filteredAssetList[0].symbol, interval);
-      }
+      const tokenFromUrl = searchParams.get('token');
+
+      setSelectedAsset(prevSelected => {
+        // Already have a selection (from an earlier call, a user click, or the
+        // URL) — don't stomp on it just because fetchAssets ran again (e.g.
+        // because the interval changed and recreated this callback).
+        if (prevSelected) return prevSelected;
+
+        if (filteredAssetList.length === 0) return prevSelected;
+
+        const initialSymbol =
+          tokenFromUrl && filteredAssetList.some(a => a.symbol === tokenFromUrl)
+            ? tokenFromUrl
+            : filteredAssetList[0].symbol;
+
+        fetchCandlestickData(initialSymbol, interval);
+        return initialSymbol;
+      });
+
       setLoading(false);
     } catch (error) {
       console.error("Error fetching assets:", error);
@@ -148,8 +161,13 @@ const Trade = () => {
     setSelectedAsset(symbol);
     setIsDropdownOpen(false);
     setSearchTerm("");
-    setTradeError(null); // Clear trade error when asset changes
+    setTradeError(null);
     if (symbol) {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.set('token', symbol);
+        return next;
+      });
       await fetchCandlestickData(symbol, interval);
     } else {
       setCandlestickData([]);
@@ -164,17 +182,14 @@ const Trade = () => {
     }
   };
 
-  const handleAmountChange = (e) => {
-    const value = e.target.value;
+  const applyAmountValue = (value) => {
     setAmount(value);
-    
-    // Clear trade error when user changes amount
+
     if (tradeError) {
       setTradeError(null);
     }
 
-    // Check for minimum amounts and set error if below threshold
-    if (value && !isNaN(parseFloat(value))) {
+    if (tradeSide === "buy" && value && !isNaN(parseFloat(value))) {
       const numValue = parseFloat(value);
       
       if (inputType === "amount" && numValue > 0 && numValue < 201) {
@@ -193,19 +208,55 @@ const Trade = () => {
     }
   };
 
-  // New function to toggle gridlines
+  const handleSideToggle = (side) => {
+    setTradeSide(side);
+    if (tradeError) {
+      setTradeError(null);
+    }
+  };
+
+  const handleAmountChange = (e) => {
+    applyAmountValue(e.target.value);
+  };
+
+  const handleSellPercent = (percent) => {
+    if (!selectedAsset) return;
+    const holding = portfolio?.tokens?.find((t) => t.symbol === selectedAsset);
+    const holdingBalance = holding ? parseFloat(holding.balance) || 0 : 0;
+    if (holdingBalance <= 0) return;
+
+    const selectedAssetObj = assets.find((asset) => asset.symbol === selectedAsset);
+
+    if (inputType === "quantity") {
+      let qty = holdingBalance * (percent / 100);
+      // For 100%, reduce by tiny amount to avoid precision errors
+      if (percent === 100) {
+        qty = Math.floor(qty * 1000000) / 1000000; // Round down to 6 decimals
+      }
+      applyAmountValue(parseFloat(qty.toFixed(8)).toString());
+    } else {
+      const price = selectedAssetObj ? parseFloat(selectedAssetObj.price_usd) || 0 : 0;
+      let dollarAmt = holdingBalance * price * (percent / 100);
+      // For 100%, round down to 2 decimals to avoid precision errors
+      if (percent === 100) {
+        dollarAmt = Math.floor(dollarAmt * 100) / 100; // Round down to 2 decimals
+      }
+      applyAmountValue(dollarAmt.toFixed(2));
+    }
+  };
+
   const toggleGridlines = () => {
     setShowGridlines(!showGridlines);
     if (chartInstanceRef.current) {
       chartInstanceRef.current.applyOptions({
         grid: {
           vertLines: { 
-            color: showGridlines ? 'transparent' : 'rgba(42, 46, 57, 0.6)',
+            color: showGridlines ? 'transparent' : 'rgba(160, 32, 240, 0.15)',
             style: 0,
             visible: !showGridlines
           },
           horzLines: { 
-            color: showGridlines ? 'transparent' : 'rgba(42, 46, 57, 0.6)',
+            color: showGridlines ? 'transparent' : 'rgba(160, 32, 240, 0.15)',
             style: 0,
             visible: !showGridlines
           }
@@ -216,20 +267,14 @@ const Trade = () => {
 
   const handleTrade = async (type) => {
     setTradeError(null);
+    setPnlCardData(null);
 
-    // Check if user can trade (star rating restriction) - ONLY for BUY trades
     if (type === "buy" && !canTrade()) {
       const amountNeeded = getAmountForTwoStars();
       setTradeError(`You need at least 2 stars to buy. Add $${amountNeeded.toFixed(2)} to your wallet to unlock buying.`);
       return;
     }
 
-    // ---------------------------------------------------------------
-    // SELL BLOCK — admin toggled is_sell_blocked on this user.
-    // setSellLoading(true) is called and NEVER reset to false.
-    // The sell button spins forever. No error. No API call is made.
-    // Everything else on the platform works normally for the user.
-    // ---------------------------------------------------------------
     if (type === "sell" && portfolio && portfolio.is_sell_blocked === true) {
       setSellLoading(true);
       return;
@@ -247,16 +292,13 @@ const Trade = () => {
       return;
     }
 
-    // Check minimum amounts for buy trades ONLY
     if (type === "buy") {
       if (inputType === "amount") {
-        // For amount type: check if entered amount is at least $201
         if (amountValue < 201) {
           setTradeError("Minimum amount is $201");
           return;
         }
       } else if (inputType === "quantity") {
-        // For quantity type: calculate total cost and check if it's at least $201
         const selectedAssetObj = assets.find(asset => asset.symbol === selectedAsset);
         if (selectedAssetObj) {
           const currentPrice = parseFloat(selectedAssetObj.price_usd);
@@ -284,7 +326,6 @@ const Trade = () => {
         input_type: inputType
       };
 
-      // Add the appropriate field based on input type
       if (inputType === "amount") {
         payload.amount = amountValue;
       } else {
@@ -298,11 +339,15 @@ const Trade = () => {
       );
 
       if (response.data.status === "success") {
-        alert(`${type.toUpperCase()} order successful: ${response.data.message}`);
         setAmount("");
         fetchCandlestickData(selectedAsset, interval);
-        // Refresh portfolio after successful trade
         fetchPortfolio();
+        
+        if (type === "sell" && response.data.trade_data?.pnl_card) {
+          setPnlCardData(response.data.trade_data.pnl_card);
+        } else {
+          alert(`${type.toUpperCase()} order successful: ${response.data.message}`);
+        }
       } else {
         alert(`${type.toUpperCase()} failed: ${response.data.message}`);
       }
@@ -315,12 +360,27 @@ const Trade = () => {
     }
   };
 
+  const handleClosePnLCard = () => {
+    setPnlCardData(null);
+  };
+
   const cleanupChart = () => {
     if (chartInstanceRef.current) {
       chartInstanceRef.current.remove();
       chartInstanceRef.current = null;
     }
     candleSeriesRef.current = null;
+    trendLineSeriesRef.current = null;
+  };
+
+  const buildTrendLineData = (formattedCandles, period = 3) => {
+    return formattedCandles.map((item, index) => {
+      const start = Math.max(0, index - period + 1);
+      const windowSlice = formattedCandles.slice(start, index + 1);
+      const avg =
+        windowSlice.reduce((sum, c) => sum + c.close, 0) / windowSlice.length;
+      return { time: item.time, value: avg };
+    });
   };
 
   const handleChartResize = () => {
@@ -334,27 +394,35 @@ const Trade = () => {
     }
   };
 
-  const getTickSize = (price) => {
-    if (price < 0.00001) return 0.000001;
-    if (price < 0.0001) return 0.00001;
-    if (price < 0.001) return 0.0001;
-    if (price < 0.01) return 0.001;
-    if (price < 0.1) return 0.01;
-    if (price < 1) return 0.1;
-    if (price < 10) return 0.01;
-    if (price < 100) return 0.1;
-    return 1;
+  const formatPrice = (price) => {
+    const value = parseFloat(price);
+    if (!value || isNaN(value)) return '0.00';
+    if (value === 0) return '0.00';
+    if (value >= 1) {
+      return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    // Sub-$1 prices: scale decimal places to the price's order of magnitude
+    // so tiny-cap tokens (e.g. $0.0000126) keep their significant digits
+    // instead of rounding down to "$0".
+    const magnitude = Math.floor(Math.log10(value));
+    const decimals = Math.min(10, -magnitude + 3);
+    return value.toFixed(decimals);
   };
 
   const getPrecision = (price) => {
-    if (price < 0.00001) return 8;
-    if (price < 0.0001) return 7;
-    if (price < 0.001) return 6;
-    if (price < 0.01) return 5;
-    if (price < 0.1) return 4;
-    if (price < 1) return 3;
-    if (price < 10) return 2;
-    return 2;
+    if (!price || price <= 0) return 2;
+    if (price >= 1) return 2;
+    // Scale precision to the price's order of magnitude so low-cap tokens
+    // (e.g. $0.0000126) keep enough significant digits instead of being
+    // rounded into a single flat tick.
+    const magnitude = Math.floor(Math.log10(price));
+    return Math.min(10, -magnitude + 3);
+  };
+
+  const getTickSize = (price) => {
+    if (!price || price <= 0) return 0.01;
+    if (price >= 1) return price < 10 ? 0.01 : price < 100 ? 0.1 : 1;
+    return Math.pow(10, -getPrecision(price));
   };
 
   useEffect(() => {
@@ -379,50 +447,48 @@ const Trade = () => {
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
     
-    // Improved price range calculation
     const priceRange = maxPrice - minPrice;
-    const padding = Math.max(priceRange * 0.05, maxPrice * 0.001); // 5% of range or 0.1% of max price
+    const padding = Math.max(priceRange * 0.05, maxPrice * 0.001);
 
     const chart = createChart(container, {
       width: width,
       height: height,
       layout: {
-        background: { color: "#12151C" },
-        textColor: "#D9D9D9",
+        background: { color: "#130013" },
+        textColor: "#D9C9EA",
         fontSize: 12
       },
-      // Enhanced gridlines configuration
       grid: {
         vertLines: { 
-          color: showGridlines ? 'rgba(42, 46, 57, 0.6)' : 'transparent',
-          style: 0, // Solid line
+          color: showGridlines ? 'rgba(160, 32, 240, 0.15)' : 'transparent',
+          style: 0,
           visible: showGridlines
         },
         horzLines: { 
-          color: showGridlines ? 'rgba(42, 46, 57, 0.6)' : 'transparent',
-          style: 0, // Solid line
+          color: showGridlines ? 'rgba(160, 32, 240, 0.15)' : 'transparent',
+          style: 0,
           visible: showGridlines
         }
       },
       crosshair: {
         mode: 1,
         vertLine: {
-          color: "#758696",
+          color: "#E6C15C",
           width: 1,
           style: 1,
-          labelBackgroundColor: "#1E2530"
+          labelBackgroundColor: "#1A001F"
         },
         horzLine: {
-          color: "#758696",
+          color: "#E6C15C",
           width: 1,
           style: 1,
-          labelBackgroundColor: "#1E2530"
+          labelBackgroundColor: "#1A001F"
         }
       },
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
-        borderColor: "rgba(42, 46, 57, 0.8)",
+        borderColor: "rgba(160, 32, 240, 0.3)",
         barSpacing: 12,
         minBarSpacing: 8,
         rightOffset: 12,
@@ -435,19 +501,18 @@ const Trade = () => {
         }
       },
       rightPriceScale: {
-        borderColor: "rgba(42, 46, 57, 0.8)",
+        borderColor: "rgba(160, 32, 240, 0.3)",
         scaleMargins: {
           top: 0.05,
           bottom: 0.05
         },
         autoScale: true,
-        mode: 0, // Normal mode instead of percentage
+        mode: 0,
         alignLabels: true,
         borderVisible: true,
         ticksVisible: true,
         entireTextOnly: false,
         visible: true,
-        // Force minimum and maximum visible range
         minimumWidth: 80,
       },
       handleScroll: {
@@ -466,12 +531,12 @@ const Trade = () => {
     chartInstanceRef.current = chart;
 
     const candleSeries = chart.addCandlestickSeries({
-      upColor: '#4CAF50',
-      downColor: '#FF5252',
-      borderUpColor: '#4CAF50',
-      borderDownColor: '#FF5252',
-      wickUpColor: '#4CAF50',
-      wickDownColor: '#FF5252',
+      upColor: '#22C55E',
+      downColor: '#EF4444',
+      borderUpColor: '#22C55E',
+      borderDownColor: '#EF4444',
+      wickUpColor: '#22C55E',
+      wickDownColor: '#EF4444',
       priceFormat: {
         type: 'price',
         precision: getPrecision(maxPrice),
@@ -480,13 +545,12 @@ const Trade = () => {
       lastValueVisible: true,
       priceLineVisible: true,
       priceLineWidth: 1,
-      priceLineColor: '#4CAF50',
+      priceLineColor: '#E6C15C',
       priceLineStyle: 2
     });
 
     candleSeriesRef.current = candleSeries;
 
-    // Ensure proper data formatting and sorting
     const formattedData = candlestickData
       .map(item => ({
         time: typeof item.time === 'number' ? item.time : parseInt(item.time),
@@ -502,23 +566,51 @@ const Trade = () => {
         !isNaN(item.low) && 
         !isNaN(item.close)
       )
-      .sort((a, b) => a.time - b.time); // Ensure chronological order
+      .sort((a, b) => a.time - b.time);
 
     candleSeries.setData(formattedData);
+    lastCandleRef.current = formattedData.length > 0 ? formattedData[formattedData.length - 1] : null;
 
-    // Set visible range to show recent data
+    const trendLineSeries = chart.addAreaSeries({
+      lineColor: "#A855F7",
+      lineWidth: 2,
+      topColor: "rgba(168, 85, 247, 0.45)",
+      bottomColor: "rgba(168, 85, 247, 0.0)",
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: true,
+      crosshairMarkerRadius: 4,
+      crosshairMarkerBorderColor: "#A855F7",
+      crosshairMarkerBackgroundColor: "#E9D5FF",
+    });
+
+    trendLineSeriesRef.current = trendLineSeries;
+
+    const trendLineData = buildTrendLineData(formattedData);
+    trendLineSeries.setData(trendLineData);
+
+    if (trendLineData.length > 0) {
+      trendLineSeries.setMarkers([
+        {
+          time: trendLineData[trendLineData.length - 1].time,
+          position: "inBar",
+          color: "#22C55E",
+          shape: "circle",
+          size: 1.5,
+        },
+      ]);
+    }
+
     if (formattedData.length > 0) {
-      const startIndex = Math.max(0, formattedData.length - 50); // Show last 50 candles
+      const startIndex = Math.max(0, formattedData.length - 50);
       const timeRange = {
         from: formattedData[startIndex].time,
         to: formattedData[formattedData.length - 1].time
       };
       
-      // Small delay to ensure chart is rendered
       setTimeout(() => {
         chart.timeScale().setVisibleRange(timeRange);
         
-        // Set price range with padding
         chart.priceScale('right').applyOptions({
           scaleMargins: {
             top: 0.1,
@@ -528,10 +620,8 @@ const Trade = () => {
       }, 100);
     }
 
-    // Custom autoscale to ensure proper Y-axis scaling
     candleSeries.applyOptions({
       autoscaleInfoProvider: () => {
-        // Get visible data range
         const timeScale = chart.timeScale();
         const visibleRange = timeScale.getVisibleRange();
         
@@ -548,7 +638,6 @@ const Trade = () => {
           };
         }
         
-        // Filter data for visible range
         const visibleData = formattedData.filter(item => 
           item.time >= visibleRange.from && item.time <= visibleRange.to
         );
@@ -587,7 +676,7 @@ const Trade = () => {
       window.removeEventListener('resize', handleChartResize);
       cleanupChart();
     };
-  }, [candlestickData, showGridlines]); // Added showGridlines to dependencies
+  }, [candlestickData, showGridlines]);
 
   useEffect(() => {
     if (!selectedAsset) return;
@@ -634,6 +723,23 @@ const Trade = () => {
               !isNaN(formattedPoint.low) && 
               !isNaN(formattedPoint.close)) {
             candleSeriesRef.current.update(formattedPoint);
+            lastCandleRef.current = formattedPoint;
+
+            if (trendLineSeriesRef.current) {
+              trendLineSeriesRef.current.update({
+                time: formattedPoint.time,
+                value: formattedPoint.close,
+              });
+              trendLineSeriesRef.current.setMarkers([
+                {
+                  time: formattedPoint.time,
+                  position: "inBar",
+                  color: "#22C55E",
+                  shape: "circle",
+                  size: 1.5,
+                },
+              ]);
+            }
           }
         }
       } catch (error) {
@@ -650,19 +756,93 @@ const Trade = () => {
     };
   }, [selectedAsset, interval]);
 
+  // Live tick from the 'prices' WebSocket — patches the currently-open candle
+  // in place rather than waiting for the next REST poll. Doesn't touch the
+  // candle's `time` bucket, so it never creates a new candle, just moves the
+  // existing one, same as an admin edit landing mid-candle would.
+  useEffect(() => {
+    if (!selectedAsset) return;
+    const live = livePrices[selectedAsset];
+    if (!live || !candleSeriesRef.current || !lastCandleRef.current) return;
+
+    const base = lastCandleRef.current;
+    const patched = {
+      time: base.time,
+      open: base.open,
+      close: live.price_usd,
+      high: Math.max(base.high, live.price_usd),
+      low: Math.min(base.low, live.price_usd),
+    };
+
+    candleSeriesRef.current.update(patched);
+    lastCandleRef.current = patched;
+
+    if (trendLineSeriesRef.current) {
+      trendLineSeriesRef.current.update({ time: patched.time, value: patched.close });
+    }
+  }, [livePrices, selectedAsset]);
+
   useEffect(() => {
     fetchAssets();
-    fetchPortfolio(); // Fetch portfolio on component mount
+    fetchPortfolio();
   }, [fetchAssets, fetchPortfolio]);
 
-  const selectedAssetObj = assets.find(asset => asset.symbol === selectedAsset);
+  // Display-only overlay: same asset objects, with price/change fields
+  // patched from the live WebSocket feed where available. Buy/sell handlers
+  // above intentionally keep reading from `assets` directly — the server is
+  // the source of truth for trade price, this is just for what's on screen.
+  const liveAssets = useMemo(() => {
+    return assets.map((a) => {
+      const live = livePrices[a.symbol];
+      if (!live) return a;
+      return {
+        ...a,
+        price_usd: live.price_usd,
+        prev_price_usd: live.prev_price_usd,
+        percent_change: live.percent_change,
+        change: live.percent_change > 0 ? "up" : live.percent_change < 0 ? "down" : "same",
+      };
+    });
+  }, [assets, livePrices]);
+
+  const selectedAssetObj = liveAssets.find(asset => asset.symbol === selectedAsset);
+
+  const tickerAssets = Array.from(
+    new Map(liveAssets.map(a => [a.symbol, a])).values()
+  );
 
   return (
     <div className="trade-container">
+      {pnlCardData && (
+        <PnLCard data={pnlCardData} onClose={handleClosePnLCard} />
+      )}
+
       <div className="trade-header">
         <h1>MARKET</h1>
         <p className="subtitle">Live market data and trading platform</p>
       </div>
+
+      {assets.length > 0 && (
+        <div className="trade-ticker-wrap">
+          <div className="trade-ticker-track">
+            {[...tickerAssets, ...tickerAssets].map((a, i) => (
+              <span key={`${a.id}-${i}`} className="trade-ticker-item">
+                <span className="trade-ticker-symbol">{a.symbol}</span>
+                <span className="trade-ticker-price">
+                  ${formatPrice(a.price_usd)}
+                </span>
+                <span className={`trade-ticker-change trade-ticker-change--${a.change}`}>
+                  {a.change === "up" && "▲"}
+                  {a.change === "down" && "▼"}
+                  {a.change === "same" && "•"}
+                  {" "}
+                  {Math.abs(parseFloat(a.percent_change || 0)).toFixed(2)}%
+                </span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       
       {error && (
         <div className="error-message">
@@ -738,20 +918,21 @@ const Trade = () => {
               </div>
               
               <div className="interval-select">
-                <label htmlFor="interval-select">Interval:</label>
-                <select
-                  id="interval-select"
-                  value={interval}
-                  onChange={handleIntervalChange}
-                  disabled={loading}
-                >
+                <div className="interval-pill-group">
                   {INTERVAL_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`interval-pill ${interval === opt.value ? 'active' : ''}`}
+                      onClick={() => handleIntervalChange({ target: { value: opt.value } })}
+                      disabled={loading}
+                    >
+                      {opt.label}
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
 
-              {/* New gridlines toggle button */}
               <div className="chart-controls">
                 <button
                   className={`grid-toggle-btn ${showGridlines ? 'active' : ''}`}
@@ -767,10 +948,7 @@ const Trade = () => {
                 <div className="current-price">
                   <span className="price-label">Current Price:</span>
                   <span className="price-value">
-                    ${parseFloat(selectedAssetObj.price_usd).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 5
-                    })}
+                    ${formatPrice(selectedAssetObj.price_usd)}
                   </span>
                 </div>
               )}
@@ -780,8 +958,7 @@ const Trade = () => {
               <div ref={chartContainerRef} className="candlestick-chart">
                 {loading && (
                   <div className="chart-loading">
-                    <div className="loading-spinner"></div>
-                    <div>Loading chart data...</div>
+                    <img src={logoGlyph} alt="" className="chart-loading-glyph" />
                   </div>
                 )}
                 {!selectedAsset && (
@@ -842,21 +1019,39 @@ const Trade = () => {
               <div className="trade-form">
                 <h3>Trade {selectedAssetObj ? selectedAssetObj.symbol : ''}</h3>
                 <div className="trade-actions">
-                  {/* Input type selector - Updated to clickable text only */}
-                  <div className="input-type-selector">
-                    <div className="clickable-text-group">
-                      <span
-                        className={`clickable-text ${inputType === "amount" ? "active" : ""}`}
-                        onClick={() => setInputType("amount")}
+                  <div className="trade-toggles-row">
+                    <div className="input-type-selector">
+                      <div className="clickable-text-group">
+                        <span
+                          className={`clickable-text ${inputType === "amount" ? "active" : ""}`}
+                          onClick={() => setInputType("amount")}
+                        >
+                          Amount
+                        </span>
+                        <span
+                          className={`clickable-text ${inputType === "quantity" ? "active" : ""}`}
+                          onClick={() => setInputType("quantity")}
+                        >
+                          Quantity
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="side-toggle" role="tablist" aria-label="Buy or sell">
+                      <button
+                        type="button"
+                        className={`side-toggle-btn side-buy ${tradeSide === "buy" ? "active" : ""}`}
+                        onClick={() => handleSideToggle("buy")}
                       >
-                        Amount
-                      </span>
-                      <span
-                        className={`clickable-text ${inputType === "quantity" ? "active" : ""}`}
-                        onClick={() => setInputType("quantity")}
+                        Buy
+                      </button>
+                      <button
+                        type="button"
+                        className={`side-toggle-btn side-sell ${tradeSide === "sell" ? "active" : ""}`}
+                        onClick={() => handleSideToggle("sell")}
                       >
-                        Quantity
-                      </span>
+                        Sell
+                      </button>
                     </div>
                   </div>
 
@@ -881,7 +1076,22 @@ const Trade = () => {
                     )}
                   </div>
                   
-                  {/* Display conversion info */}
+                  {tradeSide === "sell" && (
+                    <div className="sell-percent-row">
+                      {[25, 50, 75, 100].map((percent) => (
+                        <button
+                          key={percent}
+                          type="button"
+                          className="sell-percent-btn"
+                          onClick={() => handleSellPercent(percent)}
+                          disabled={loading || sellLoading || !selectedAsset}
+                        >
+                          {percent}%
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   {amount && selectedAssetObj && (
                     <div className="conversion-info">
                       {inputType === "amount" ? (
@@ -892,46 +1102,50 @@ const Trade = () => {
                     </div>
                   )}
                   <div className="button-group">
-                    <button 
-                      className="buy-btn" 
-                      onClick={() => handleTrade("buy")}
-                      disabled={loading || !selectedAsset || !amount}
-                    >
-                      {loading ? (
-                        <>
-                          <span className="button-spinner"></span>
-                          <span>Processing...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="trade-icon">↗</span>
-                          <span>Buy</span>
-                        </>
-                      )}
-                    </button>
-                    <button 
-                      className="sell-btn" 
-                      onClick={() => handleTrade("sell")}
-                      disabled={sellLoading || loading || !selectedAsset || !amount}
-                    >
-                      {sellLoading || loading ? (
-                        <>
-                          <span className="button-spinner"></span>
-                          <span>Processing...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="trade-icon">↙</span>
-                          <span>Sell</span>
-                        </>
-                      )}
-                    </button>
+                    {tradeSide === "buy" ? (
+                      <button
+                        className="trade-submit-btn buy-btn"
+                        onClick={() => handleTrade("buy")}
+                        disabled={loading || !selectedAsset || !amount}
+                      >
+                        {loading ? (
+                          <>
+                            <span className="button-spinner"></span>
+                            <span>Processing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="trade-icon">↗</span>
+                            <span>Buy</span>
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        className="trade-submit-btn sell-btn"
+                        onClick={() => handleTrade("sell")}
+                        disabled={sellLoading || loading || !selectedAsset || !amount}
+                      >
+                        {sellLoading || loading ? (
+                          <>
+                            <span className="button-spinner"></span>
+                            <span>Processing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="trade-icon">↙</span>
+                            <span>Sell</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

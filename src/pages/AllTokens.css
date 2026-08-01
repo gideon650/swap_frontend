@@ -1,0 +1,237 @@
+:root {
+  --dash-bg: #000000;
+  --dash-panel: #130013;
+  --dash-purple: #800080;
+  --dash-purple-bright: #a020f0;
+  --spark-up: #16c784;
+  --spark-down: #ea3943;
+}
+
+.all-tokens-container {
+  min-height: 100vh;
+  background: var(--dash-bg);
+  color: #fff;
+  font-family: 'Inter', 'Roboto', 'Segoe UI', Arial, sans-serif;
+  padding-bottom: var(--page-bottom-clearance, 100px);
+}
+
+.all-tokens-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.all-tokens-back-btn {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.all-tokens-back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Absolutely centered on the header regardless of the back button's
+   rendered width — not dependent on a matching element on the right. */
+.all-tokens-header-title {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  color: #f5d0fe;
+  white-space: nowrap;
+}
+
+.all-tokens-header-icon {
+  color: #f0abfc;
+  flex-shrink: 0;
+}
+
+.all-tokens-search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 16px 12px;
+  padding: 0.55rem 0.9rem;
+  background: var(--dash-panel);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+}
+
+.all-tokens-search-icon {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.all-tokens-search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.all-tokens-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.all-tokens-content {
+  padding: 16px;
+}
+
+.all-tokens-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.all-tokens-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--dash-panel);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.all-tokens-card:hover {
+  border-color: rgba(160, 32, 240, 0.4);
+}
+
+.all-tokens-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.all-tokens-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.all-tokens-symbol {
+  font-weight: 600;
+  color: #fff;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.all-tokens-name {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.all-tokens-sparkline-svg {
+  width: 40px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.all-tokens-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.all-tokens-price-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.all-tokens-image-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #1a0f26;
+  flex-shrink: 0;
+}
+
+.all-tokens-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.all-tokens-price {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.all-tokens-change {
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.token-price-green {
+  color: #2ecc71;
+}
+
+.token-price-red {
+  color: #e74c3c;
+}
+
+.price-arrow {
+  font-size: 0.7rem;
+}
+
+.all-tokens-see-more-btn {
+  display: block;
+  margin: 1.25rem auto 0;
+  padding: 0.6rem 1.5rem;
+  background: transparent;
+  border: 1px solid var(--dash-purple);
+  color: #d9a5d9;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.all-tokens-see-more-btn:hover {
+  background: rgba(128, 0, 128, 0.15);
+}
+
+.all-tokens-empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+  padding: 2rem 0;
+}

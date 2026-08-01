@@ -1,0 +1,304 @@
+/* PnLCard.css - Updated for Horizontal/Landscape Layout */
+.pnl-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: pnlFadeIn 0.3s ease-out;
+}
+
+@keyframes pnlFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.pnl-modal {
+  max-width: 700px;
+  width: 100%;
+  animation: pnlSlideUp 0.4s ease-out;
+}
+
+@keyframes pnlSlideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pnl-card {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9; /* Changed from 9/16 to 16/9 for landscape */
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pnl-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Dark overlay for text readability */
+.pnl-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 24px 32px;
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Brand row */
+.pnl-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pnl-brand-logo {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+}
+
+.pnl-brand-text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+}
+
+/* Main stats - stacked under the brand, left-aligned */
+.pnl-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.pnl-symbol {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.8);
+}
+
+.pnl-percent {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: 56px;
+  line-height: 1.1;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.8);
+  transition: color 0.3s ease;
+}
+
+.pnl-duration {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.03em;
+  margin-top: 8px;
+}
+
+.pnl-duration-icon {
+  width: 16px;
+  height: 16px;
+  color: rgba(255, 255, 255, 0.75);
+  flex-shrink: 0;
+}
+
+/* Footer - Bottom (unchanged) */
+.pnl-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.pnl-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: 'Inter', sans-serif;
+  flex: 1;
+}
+
+.pnl-row-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.pnl-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pnl-value-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pnl-value-icon {
+  width: 18px;
+  height: 18px;
+  color: rgba(255, 255, 255, 0.85);
+  flex-shrink: 0;
+}
+
+.pnl-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pnl-modal {
+    max-width: 95%;
+  }
+  
+  .pnl-card {
+    aspect-ratio: 16 / 8; /* Slightly taller on mobile */
+  }
+  
+  .pnl-content {
+    padding: 16px 20px;
+  }
+
+  .pnl-brand-logo {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .pnl-symbol {
+    font-size: 22px;
+  }
+  
+  .pnl-percent {
+    font-size: 40px;
+  }
+  
+  .pnl-duration {
+    font-size: 14px;
+  }
+
+  .pnl-duration-icon {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .pnl-value-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .pnl-value {
+    font-size: 18px;
+  }
+  
+  .pnl-footer {
+    flex-direction: row;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pnl-modal {
+    max-width: 98%;
+  }
+  
+  .pnl-card {
+    aspect-ratio: 16 / 9;
+  }
+  
+  .pnl-content {
+    padding: 12px 16px;
+  }
+
+  .pnl-brand-logo {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .pnl-brand-text {
+    font-size: 11px;
+  }
+  
+  .pnl-symbol {
+    font-size: 18px;
+  }
+  
+  .pnl-percent {
+    font-size: 32px;
+  }
+  
+  .pnl-duration {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .pnl-duration-icon {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .pnl-label {
+    font-size: 9px;
+  }
+  
+  .pnl-value-icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  .pnl-value {
+    font-size: 16px;
+  }
+  
+  .pnl-footer {
+    flex-direction: row;
+    gap: 8px;
+    padding-top: 10px;
+  }
+}
