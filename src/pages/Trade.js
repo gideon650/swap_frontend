@@ -36,6 +36,7 @@ const Trade = () => {
   const candleSeriesRef = useRef(null);
   const trendLineSeriesRef = useRef(null);
   const lastCandleRef = useRef(null); // most recently known candle — WS ticks patch this in place
+  const tickerTrackRef = useRef(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { prices: livePrices } = usePrices();
 
@@ -383,17 +384,6 @@ const Trade = () => {
     });
   };
 
-  const handleChartResize = () => {
-    if (chartInstanceRef.current && chartContainerRef.current) {
-      const { clientWidth, clientHeight } = chartContainerRef.current;
-      chartInstanceRef.current.applyOptions({ 
-        width: clientWidth,
-        height: clientHeight 
-      });
-      chartInstanceRef.current.timeScale().fitContent();
-    }
-  };
-
   const formatPrice = (price) => {
     const value = parseFloat(price);
     if (!value || isNaN(value)) return '0.00';
@@ -670,13 +660,38 @@ const Trade = () => {
       }
     });
 
-    window.addEventListener('resize', handleChartResize);
-
     return () => {
-      window.removeEventListener('resize', handleChartResize);
       cleanupChart();
     };
   }, [candlestickData, showGridlines]);
+
+  // Keep the chart's pixel width in sync with its container using a
+  // ResizeObserver instead of a window 'resize' listener. On mobile,
+  // scrolling collapses/expands the browser's address bar, which fires a
+  // 'resize' event even though the chart container's *width* hasn't
+  // changed — only the viewport height has. Reacting to that (as the old
+  // window-resize handler did, plus a fitContent() call) re-laid out the
+  // chart and reset the zoomed-in view on every scroll, making the
+  // candles appear to jump away from the current-price display. Only
+  // acting on genuine width changes avoids that.
+  useEffect(() => {
+    const container = chartContainerRef.current;
+    if (!container) return;
+
+    let lastWidth = container.clientWidth;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry || !chartInstanceRef.current) return;
+      const newWidth = Math.round(entry.contentRect.width);
+      if (newWidth === lastWidth) return;
+      lastWidth = newWidth;
+      chartInstanceRef.current.applyOptions({ width: newWidth });
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [candlestickData]);
 
   useEffect(() => {
     if (!selectedAsset) return;
@@ -811,6 +826,22 @@ const Trade = () => {
     new Map(liveAssets.map(a => [a.symbol, a])).values()
   );
 
+  // The track renders two back-to-back copies of tickerAssets and the CSS
+  // animation translates by -50% (i.e. the width of one copy) — so speed
+  // (px/sec) only stays constant across different token-list sizes if the
+  // duration scales with that measured width. A fixed duration (e.g. 40s)
+  // made the ticker visibly faster in production, which has far more real
+  // tokens than a local test list.
+  useEffect(() => {
+    const track = tickerTrackRef.current;
+    if (!track || tickerAssets.length === 0) return;
+
+    const PIXELS_PER_SECOND = 60;
+    const oneCopyWidth = track.scrollWidth / 2;
+    const duration = Math.max(oneCopyWidth / PIXELS_PER_SECOND, 8);
+    track.style.setProperty('--ticker-duration', `${duration}s`);
+  }, [tickerAssets.length]);
+
   return (
     <div className="trade-container">
       {pnlCardData && (
@@ -824,7 +855,7 @@ const Trade = () => {
 
       {assets.length > 0 && (
         <div className="trade-ticker-wrap">
-          <div className="trade-ticker-track">
+          <div className="trade-ticker-track" ref={tickerTrackRef}>
             {[...tickerAssets, ...tickerAssets].map((a, i) => (
               <span key={`${a.id}-${i}`} className="trade-ticker-item">
                 <span className="trade-ticker-symbol">{a.symbol}</span>

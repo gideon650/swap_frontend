@@ -98,7 +98,10 @@ body {
   width: max-content;
   gap: 28px;
   padding: 10px 20px;
-  animation: trade-ticker-scroll 40s linear infinite;
+  /* Duration is set inline from JS (--ticker-duration) based on the
+     measured track width, so speed stays constant no matter how many
+     tokens are loaded. 40s is just a fallback before JS measures it. */
+  animation: trade-ticker-scroll var(--ticker-duration, 40s) linear infinite;
 }
 
 .trade-ticker-wrap:hover .trade-ticker-track {
