@@ -1348,8 +1348,12 @@
 
 .token-row-price {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-family: 'Roboto Mono', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .token-row-right {
@@ -1443,10 +1447,14 @@
 
 .trending-slim-price {
   color: rgba(255, 255, 255, 0.55);
-  font-size: 0.8rem;
+  font-size: 0.68rem;
   font-family: 'Roboto Mono', monospace;
   flex: 1;
+  min-width: 0;
   text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .trending-slim-change {
@@ -1499,7 +1507,10 @@
     font-size: 0.78rem;
   }
 
-  .trending-slim-price,
+  .trending-slim-price {
+    font-size: 0.6rem;
+  }
+
   .trending-slim-change {
     font-size: 0.72rem;
   }
@@ -1519,6 +1530,10 @@
 
   .token-row-card {
     padding: 0.65rem 0.8rem;
+  }
+
+  .token-row-price {
+    font-size: 0.58rem;
   }
 
   .balance-card {

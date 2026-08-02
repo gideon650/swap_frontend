@@ -377,7 +377,7 @@ const Dashboard = () => {
                     onClick={() => handleTokenClick(token.symbol)}
                   >
                     <span className="trending-slim-symbol">{token.symbol}</span>
-                    <span className="trending-slim-price">${token.price_usd.toFixed(3)}</span>
+                    <span className="trending-slim-price">${token.price_usd.toFixed(8)}</span>
                     <span className={`trending-slim-change ${getPercentChangeColor(token.percent_change_24h)}`}>
                       {getPriceChangeArrow(token.percent_change_24h > 0 ? "up" : token.percent_change_24h < 0 ? "down" : "same")}
                       {token.percent_change_24h > 0 ? "+" : ""}
@@ -451,7 +451,7 @@ const Dashboard = () => {
                         {token.symbol} <span className="token-symbol">{token.name}</span>
                       </div>
                       {priceData && (
-                        <div className="token-row-price">${priceData.price_usd.toFixed(3)}</div>
+                        <div className="token-row-price">${priceData.price_usd.toFixed(8)}</div>
                       )}
                     </div>
                     <div className="token-row-right">
