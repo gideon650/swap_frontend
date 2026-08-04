@@ -198,6 +198,21 @@
   flex-shrink: 0;
 }
 
+/* Variant used when a real token logo is available — replaces the
+   gold gradient/initial with the actual image, still circular. */
+.sw-token-badge-image {
+  background: #1a0f24;
+  box-shadow: none;
+  padding: 0;
+  overflow: hidden;
+}
+.sw-token-badge-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 /* ===== Divider with spinning swap icon ===== */
 .sw-divider {
   margin: 16px 0;

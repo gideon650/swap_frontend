@@ -235,7 +235,7 @@ function Assets() {
                   <button
                     key={t.symbol}
                     className="ast-token-row"
-                    onClick={() => navigate(`/asset/${t.symbol}`)}
+                    onClick={() => navigate(`/trade?token=${t.symbol}`)}
                   >
                     <div className="ast-token-left">
                       {t.image_url ? (

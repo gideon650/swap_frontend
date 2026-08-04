@@ -1093,7 +1093,7 @@ const Trade = () => {
                     <input
                       id="trade-amount"
                       type="number"
-                      placeholder={inputType === "amount" ? "Enter dollar amount..." : "Enter quantity..."}
+                      placeholder={inputType === "amount" ? "Enter USD amount..." : "Enter quantity..."}
                       value={amount}
                       onChange={handleAmountChange}
                       disabled={loading || !selectedAsset}

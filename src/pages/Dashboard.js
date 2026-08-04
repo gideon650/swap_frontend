@@ -376,13 +376,24 @@ const Dashboard = () => {
                     className={`trending-slim-card ${isSpanFull ? "trending-item-full" : ""}`}
                     onClick={() => handleTokenClick(token.symbol)}
                   >
-                    <span className="trending-slim-symbol">{token.symbol}</span>
-                    <span className="trending-slim-price">${token.price_usd.toFixed(8)}</span>
-                    <span className={`trending-slim-change ${getPercentChangeColor(token.percent_change_24h)}`}>
-                      {getPriceChangeArrow(token.percent_change_24h > 0 ? "up" : token.percent_change_24h < 0 ? "down" : "same")}
-                      {token.percent_change_24h > 0 ? "+" : ""}
-                      {token.percent_change_24h}%
-                    </span>
+                    <div className="trending-slim-col trending-slim-col-left">
+                      <div className="trending-slim-image-wrapper">
+                        <img
+                          src={token.image_url || "/default-token.png"}
+                          alt={token.symbol}
+                          className="trending-slim-image"
+                        />
+                      </div>
+                      <span className="trending-slim-price">${token.price_usd.toFixed(8)}</span>
+                    </div>
+                    <div className="trending-slim-col trending-slim-col-right">
+                      <span className="trending-slim-symbol">{token.symbol}</span>
+                      <span className={`trending-slim-change ${getPercentChangeColor(token.percent_change_24h)}`}>
+                        {getPriceChangeArrow(token.percent_change_24h > 0 ? "up" : token.percent_change_24h < 0 ? "down" : "same")}
+                        {token.percent_change_24h > 0 ? "+" : ""}
+                        {token.percent_change_24h}%
+                      </span>
+                    </div>
                   </div>
                 );
               })}

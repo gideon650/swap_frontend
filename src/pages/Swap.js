@@ -69,7 +69,14 @@ function Field({ label, hint, error, children }) {
 }
 
 /* ---------- Token badge ---------- */
-function TokenBadge({ symbol }) {
+function TokenBadge({ symbol, imageUrl }) {
+  if (imageUrl) {
+    return (
+      <div className="sw-token-badge sw-token-badge-image">
+        <img src={imageUrl} alt={symbol} className="sw-token-badge-img" />
+      </div>
+    );
+  }
   const initial = (symbol || "?").slice(0, 1);
   return <div className="sw-token-badge">{initial}</div>;
 }
@@ -363,7 +370,7 @@ const Swap = () => {
                 <div className="sw-token-info">
                   {swapToAsset ? (
                     <>
-                      <TokenBadge symbol={swapToAsset} />
+                      <TokenBadge symbol={swapToAsset} imageUrl={selectedToAssetObj?.image_url} />
                       <div>
                         <div className="sw-token-name">{swapToAsset}</div>
                         <div className="sw-token-sub">{selectedToAssetObj?.name}</div>
@@ -401,7 +408,7 @@ const Swap = () => {
                         className="sw-dropdown-item"
                       >
                         <div className="sw-token-info">
-                          <TokenBadge symbol={asset.symbol} />
+                          <TokenBadge symbol={asset.symbol} imageUrl={asset.image_url} />
                           <div>
                             <div className="sw-token-name">{asset.name}</div>
                             <div className="sw-token-sub">{asset.symbol}</div>
