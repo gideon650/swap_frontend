@@ -192,6 +192,48 @@
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
 }
 
+/* Download icon button — floats at the top-right corner of the card
+   itself. Excluded from the actual snapshot via html-to-image's
+   `filter` option in PnLCard.js, so it never appears in the PNG. */
+.pnl-download-icon-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.pnl-download-icon-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.65);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.pnl-download-icon-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.pnl-download-icon-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  animation: pnlPulseDownload 1s infinite;
+}
+
+@keyframes pnlPulseDownload {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .pnl-modal {
@@ -240,6 +282,18 @@
   .pnl-footer {
     flex-direction: row;
     gap: 12px;
+  }
+
+  .pnl-download-icon-btn {
+    top: 12px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .pnl-download-icon-btn svg {
+    width: 15px;
+    height: 15px;
   }
 }
 
@@ -300,5 +354,17 @@
     flex-direction: row;
     gap: 8px;
     padding-top: 10px;
+  }
+
+  .pnl-download-icon-btn {
+    top: 10px;
+    right: 10px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .pnl-download-icon-btn svg {
+    width: 13px;
+    height: 13px;
   }
 }

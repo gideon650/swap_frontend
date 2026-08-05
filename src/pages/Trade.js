@@ -28,6 +28,10 @@ const Trade = () => {
   const [tradeError, setTradeError] = useState(null);
   const [inputType, setInputType] = useState("amount");
   const [tradeSide, setTradeSide] = useState("buy");
+  // Tracks which sell % button (25/50/75/100) is currently "live" — i.e. the
+  // box should keep recalculating off the live price feed until the user
+  // edits it manually, switches context, or completes the sell.
+  const [activeSellPercent, setActiveSellPercent] = useState(null);
   const [showGridlines, setShowGridlines] = useState(true);
   const [portfolio, setPortfolio] = useState(null);
   const [pnlCardData, setPnlCardData] = useState(null);
@@ -211,13 +215,25 @@ const Trade = () => {
 
   const handleSideToggle = (side) => {
     setTradeSide(side);
+    setActiveSellPercent(null);
     if (tradeError) {
       setTradeError(null);
     }
   };
 
+  useEffect(() => {
+    setActiveSellPercent(null);
+  }, [selectedAsset]);
+
   const handleAmountChange = (e) => {
+    // Manual typing always wins over live-percent tracking.
+    setActiveSellPercent(null);
     applyAmountValue(e.target.value);
+  };
+
+  const handleInputTypeChange = (type) => {
+    setInputType(type);
+    setActiveSellPercent(null);
   };
 
   const handleSellPercent = (percent) => {
@@ -226,9 +242,10 @@ const Trade = () => {
     const holdingBalance = holding ? parseFloat(holding.balance) || 0 : 0;
     if (holdingBalance <= 0) return;
 
-    const selectedAssetObj = assets.find((asset) => asset.symbol === selectedAsset);
-
     if (inputType === "quantity") {
+      // Quantity of tokens held doesn't change with price, so no live
+      // tracking is needed here.
+      setActiveSellPercent(null);
       let qty = holdingBalance * (percent / 100);
       // For 100%, reduce by tiny amount to avoid precision errors
       if (percent === 100) {
@@ -236,15 +253,51 @@ const Trade = () => {
       }
       applyAmountValue(parseFloat(qty.toFixed(8)).toString());
     } else {
-      const price = selectedAssetObj ? parseFloat(selectedAssetObj.price_usd) || 0 : 0;
+      const livePriceObj = livePrices[selectedAsset];
+      const fallbackAssetObj = assets.find((asset) => asset.symbol === selectedAsset);
+      const price = livePriceObj
+        ? parseFloat(livePriceObj.price_usd) || 0
+        : fallbackAssetObj
+        ? parseFloat(fallbackAssetObj.price_usd) || 0
+        : 0;
       let dollarAmt = holdingBalance * price * (percent / 100);
       // For 100%, round down to 2 decimals to avoid precision errors
       if (percent === 100) {
         dollarAmt = Math.floor(dollarAmt * 100) / 100; // Round down to 2 decimals
       }
       applyAmountValue(dollarAmt.toFixed(2));
+      // Keep recalculating this box off the live price feed until the
+      // user edits it, switches context, or completes the sell.
+      setActiveSellPercent(percent);
     }
   };
+
+  // While a sell percent is "active", keep the dollar amount in sync with
+  // the live price feed so what's in the box never lags behind what the
+  // user will actually get when they click Sell.
+  useEffect(() => {
+    if (!activeSellPercent || inputType !== "amount" || tradeSide !== "sell" || !selectedAsset) {
+      return;
+    }
+    const holding = portfolio?.tokens?.find((t) => t.symbol === selectedAsset);
+    const holdingBalance = holding ? parseFloat(holding.balance) || 0 : 0;
+    if (holdingBalance <= 0) return;
+
+    const livePriceObj = livePrices[selectedAsset];
+    const fallbackAssetObj = assets.find((asset) => asset.symbol === selectedAsset);
+    const price = livePriceObj
+      ? parseFloat(livePriceObj.price_usd) || 0
+      : fallbackAssetObj
+      ? parseFloat(fallbackAssetObj.price_usd) || 0
+      : 0;
+    if (!price) return;
+
+    let dollarAmt = holdingBalance * price * (activeSellPercent / 100);
+    if (activeSellPercent === 100) {
+      dollarAmt = Math.floor(dollarAmt * 100) / 100;
+    }
+    setAmount(dollarAmt.toFixed(2));
+  }, [livePrices, activeSellPercent, inputType, tradeSide, selectedAsset, portfolio, assets]);
 
   const toggleGridlines = () => {
     setShowGridlines(!showGridlines);
@@ -341,6 +394,7 @@ const Trade = () => {
 
       if (response.data.status === "success") {
         setAmount("");
+        setActiveSellPercent(null);
         fetchCandlestickData(selectedAsset, interval);
         fetchPortfolio();
         
@@ -1055,13 +1109,13 @@ const Trade = () => {
                       <div className="clickable-text-group">
                         <span
                           className={`clickable-text ${inputType === "amount" ? "active" : ""}`}
-                          onClick={() => setInputType("amount")}
+                          onClick={() => handleInputTypeChange("amount")}
                         >
                           Amount
                         </span>
                         <span
                           className={`clickable-text ${inputType === "quantity" ? "active" : ""}`}
-                          onClick={() => setInputType("quantity")}
+                          onClick={() => handleInputTypeChange("quantity")}
                         >
                           Quantity
                         </span>
