@@ -154,7 +154,7 @@ const CreateToken = () => {
                         <h3><FaInfoCircle /> Token Details</h3>
                         <ul>
                             <li>Initial Price: <span>$0.00001</span></li>
-                            <li>Initial Supply: <span>1,000,000</span></li>
+                            <li>Initial Supply: <span>1,000,000,000</span></li>
                             <li>Status: <span className="status-pending">Pending Verification</span></li>
                         </ul>
                     </div>
