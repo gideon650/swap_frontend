@@ -392,9 +392,9 @@ const Notifications = () => {
         return;
       }
 
-      const endpoint = action === 'confirm'
-        ? 'user/confirm-withdrawal'
-        : 'user/decline-withdrawal';
+      const endpoint = notification.withdrawal_role === 'merchant'
+        ? (action === 'confirm' ? 'merchant/confirm-withdrawal' : 'merchant/decline-withdrawal')
+        : (action === 'confirm' ? 'user/confirm-withdrawal' : 'user/decline-withdrawal');
 
       const response = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/${endpoint}/${withdrawalId}/`,
@@ -436,13 +436,15 @@ const Notifications = () => {
     }
     const hasDepositId = notification.deposit_id || (notification.deposit && notification.deposit.id);
     const hasWithdrawalId = notification.withdrawal_id || (notification.withdrawal && notification.withdrawal.id);
-    const isWithdrawalConfirmation = notification.message.includes('Confirm once you receive payment');
-    return hasDepositId || (hasWithdrawalId && isWithdrawalConfirmation);
+    // Backend already scopes action_buttons to the live withdrawal state for
+    // whichever role (user/merchant) this request belongs to — withdrawal_role
+    // being set is enough to know it's a P2P confirmation still awaiting action.
+    return hasDepositId || (hasWithdrawalId && !!notification.withdrawal_role);
   }, []);
 
   const isWithdrawalConfirmation = useCallback((notification) => {
     const hasWithdrawalId = notification.withdrawal_id || (notification.withdrawal && notification.withdrawal.id);
-    return hasWithdrawalId && notification.message.includes('Confirm once you receive payment');
+    return hasWithdrawalId && !!notification.withdrawal_role;
   }, []);
 
   const processedNotifications = useMemo(() => {

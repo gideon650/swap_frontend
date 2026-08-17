@@ -3,10 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { staticMerchants } from "./Wallet";
 import SuccessModal from "./SuccessModal";
-import BEP20QR from '../assets/images/BEP20.png';
-import TRC20QR from '../assets/images/TRC20.png';
-import SOLQR from '../assets/images/SOL.png';
-import ERC20QR from '../assets/images/ERC20.png';
+import { QRCodeSVG } from "qrcode.react";
 
 /* ---------- Inline icons (kept dependency-free, matches Withdraw.js) ---------- */
 const IconArrowLeft = (p) => (
@@ -68,24 +65,9 @@ const IconCopy = (p) => (
 
 const MIN_AMOUNT = 3;
 
-const NETWORK_ADDRESSES = {
-  BSC: "0xBE64FcDFb202BddFFcfB0d3eFFAbD2E87C6680B9",
-  TRC20: "TEHiejHxpS6gogLfbcOYy5Bew8qUy3DYt8",
-  SOL: "9QNKBSSxKK583F7dW2wezzfA6zWQciuSMDaQctc1pSKY",
-  ERC20: "0xBE64FcDFb202BddFFcfB0d3eFFAbD2E87C6680B9",
-};
-
-const NETWORK_QR_CODES = {
-  BSC: BEP20QR,
-  TRC20: TRC20QR,
-  SOL: SOLQR,
-  ERC20: ERC20QR,
-};
-
 const NETWORK_OPTIONS = [
   { key: "TRC20", label: "TRC20" },
-  { key: "ERC20", label: "ERC20" },
-  { key: "BSC", label: "BEP20" },
+  { key: "ETH", label: "ETH" },
   { key: "SOL", label: "SOL" },
 ];
 
@@ -115,6 +97,10 @@ const Deposit = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successDetails, setSuccessDetails] = useState(null);
 
+  const [depositAddresses, setDepositAddresses] = useState({});
+  const [addressesLoading, setAddressesLoading] = useState(false);
+  const [addressesError, setAddressesError] = useState("");
+
   const merchantRef = useRef(null);
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -122,6 +108,7 @@ const Deposit = () => {
     fetchUserBalance();
     fetchAllMerchantData();
     fetchRate();
+    fetchDepositAddresses();
 
     const handleClickOutside = (e) => {
       if (merchantRef.current && !merchantRef.current.contains(e.target)) {
@@ -131,6 +118,23 @@ const Deposit = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const fetchDepositAddresses = async () => {
+    try {
+      setAddressesLoading(true);
+      setAddressesError("");
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${API_BASE_URL}/deposit-addresses/`, {
+        headers: { Authorization: `Token ${token}` },
+      });
+      setDepositAddresses(response.data);
+    } catch (error) {
+      console.error("Failed to fetch deposit addresses", error);
+      setAddressesError("Failed to load wallet address. Please try again.");
+    } finally {
+      setAddressesLoading(false);
+    }
+  };
 
   const fetchUserBalance = async () => {
     try {
@@ -510,14 +514,32 @@ const Deposit = () => {
             </div>
 
             <div className="dp-qr-wrap">
-              <img src={NETWORK_QR_CODES[network]} alt={`${network} QR Code`} className="dp-qr-image" />
+              {addressesLoading ? (
+                <IconLoader2 className="dp-spin" />
+              ) : depositAddresses[network] ? (
+                <QRCodeSVG
+                  value={depositAddresses[network]}
+                  size={190}
+                  bgColor="#ffffff"
+                  fgColor="#800080"
+                  className="dp-qr-image"
+                />
+              ) : (
+                <span className="dp-muted">
+                  {addressesError || "No address available for this network yet"}
+                </span>
+              )}
             </div>
 
             <div className="dp-field">
               <span>Wallet address</span>
               <div className="dp-copy-row">
-                <span className="dp-address-text">{NETWORK_ADDRESSES[network]}</span>
-                <button className="dp-copy-btn" onClick={() => copyToClipboard(NETWORK_ADDRESSES[network])}>
+                <span className="dp-address-text">{depositAddresses[network] || "—"}</span>
+                <button
+                  className="dp-copy-btn"
+                  disabled={!depositAddresses[network]}
+                  onClick={() => copyToClipboard(depositAddresses[network])}
+                >
                   <IconCopy /> Copy
                 </button>
               </div>

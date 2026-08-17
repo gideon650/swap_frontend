@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FaStar, FaCoins, FaWallet, FaCheckCircle, FaPlusCircle, FaInfoCircle } from 'react-icons/fa';
+import { FaStar, FaCoins, FaWallet, FaCheckCircle, FaPlusCircle, FaInfoCircle, FaLock, FaTint } from 'react-icons/fa';
 import './CreateToken.css';
 
 const CreateToken = () => {
@@ -157,6 +157,56 @@ const CreateToken = () => {
                             <li>Initial Supply: <span>1,000,000,000</span></li>
                             <li>Status: <span className="status-pending">Pending Verification</span></li>
                         </ul>
+                    </div>
+
+                    <div className="feature-section">
+                        <h3 className="feature-section-title">
+                            <FaLock className="header-icon" /> Security Features
+                        </h3>
+
+                        <div className="feature-row">
+                            <div className="feature-row-text">
+                                <span className="feature-row-title">Revoke Freeze Authority</span>
+                            </div>
+                            <span className="locked-toggle locked-on" aria-label="Revoke Freeze Authority is always enabled">
+                                <span className="locked-toggle-knob" />
+                            </span>
+                        </div>
+
+                        <div className="feature-row">
+                            <div className="feature-row-text">
+                                <span className="feature-row-title">Revoke Mint Authority</span>
+                            </div>
+                            <span className="locked-toggle locked-on" aria-label="Revoke Mint Authority is always enabled">
+                                <span className="locked-toggle-knob" />
+                            </span>
+                        </div>
+
+                        <div className="feature-row">
+                            <div className="feature-row-text">
+                                <span className="feature-row-title">Revoke Update Authority</span>
+                            </div>
+                            <span className="locked-toggle locked-on" aria-label="Revoke Update Authority is always enabled">
+                                <span className="locked-toggle-knob" />
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="feature-section">
+                        <h3 className="feature-section-title">
+                            <FaTint className="header-icon" /> Liquidity Pool
+                        </h3>
+
+                        <div className="feature-row">
+                            <div className="feature-row-text">
+                                <span className="feature-row-title">
+                                    Create Liquidity Pool <span className="free-badge">FREE</span>
+                                </span>
+                            </div>
+                            <span className="locked-toggle locked-on" aria-label="Create Liquidity Pool is always enabled">
+                                <span className="locked-toggle-knob" />
+                            </span>
+                        </div>
                     </div>
 
                     <button 

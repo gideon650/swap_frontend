@@ -602,7 +602,7 @@ body {
 
 .details-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1px;
   border-radius: 14px;
   overflow: hidden;
@@ -619,6 +619,19 @@ body {
   min-width: 0;
 }
 
+/* Liquidity Pool sits alone on its own row, spanning all 3 columns —
+   label and toggle laid out side by side since there's room. */
+.detail-item-full {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-item-full .detail-toggle {
+  margin-top: 0;
+}
+
 .detail-label {
   font-size: 9px;
   text-transform: uppercase;
@@ -633,6 +646,35 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Read-only locked-on toggle used for security-status detail items
+   (Freeze/Mint/Update Authority, Liquidity Pool) — mirrors the toggle
+   built for CreateToken.js, sized down to fit a 3-col detail cell. */
+.detail-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 34px;
+  height: 19px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--gradient-trade);
+  box-shadow: inset 0 0 0 1px rgba(160, 32, 240, 0.5);
+  cursor: default;
+  user-select: none;
+}
+
+.detail-toggle-knob {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 15px;
+  height: 15px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 /* --- Trade form --- */

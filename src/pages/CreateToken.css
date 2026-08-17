@@ -135,6 +135,103 @@
     color: #ffa500 !important;
 }
 
+/* Security Features / Liquidity Pool sections */
+.feature-section {
+    background: rgba(128, 0, 128, 0.07);
+    border: 1px solid rgba(128, 0, 128, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 0.5rem 0;
+}
+
+.feature-section-title {
+    color: #d3d3d3;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    margin-bottom: 0.3rem;
+}
+
+.feature-section-subtitle {
+    color: #888;
+    font-size: 0.85rem;
+    margin-bottom: 1.2rem;
+}
+
+.feature-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 0.9rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.feature-row:first-of-type {
+    border-top: none;
+}
+
+.feature-row-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.feature-row-title {
+    color: #fff;
+    font-size: 0.98rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.feature-row-desc {
+    color: #999;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.free-badge {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid rgba(46, 204, 113, 0.4);
+}
+
+/* Locked-on toggle: always shows the "on" state, no interaction affordance */
+.locked-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 46px;
+    height: 26px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    cursor: default;
+    user-select: none;
+}
+
+.locked-toggle.locked-on {
+    background: linear-gradient(135deg, #a04db3, #800080);
+    box-shadow: inset 0 0 0 1px rgba(160, 77, 179, 0.5);
+}
+
+.locked-toggle-knob {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
 .action-button {
     background: linear-gradient(135deg, #800080, #a04db3);
     color: white;

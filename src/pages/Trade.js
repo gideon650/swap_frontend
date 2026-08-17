@@ -1095,6 +1095,30 @@ const Trade = () => {
                       <span className="detail-label">Highest Holder %</span>
                       <span className="detail-value">{selectedAssetObj.highest_holder}%</span>
                     </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Freeze Authority</span>
+                      <span className="detail-toggle" aria-label="Freeze authority revoked">
+                        <span className="detail-toggle-knob" />
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Mint Authority</span>
+                      <span className="detail-toggle" aria-label="Mint authority revoked">
+                        <span className="detail-toggle-knob" />
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Update Authority</span>
+                      <span className="detail-toggle" aria-label="Update authority revoked">
+                        <span className="detail-toggle-knob" />
+                      </span>
+                    </div>
+                    <div className="detail-item detail-item-full">
+                      <span className="detail-label">Liquidity Pool</span>
+                      <span className="detail-toggle" aria-label="Liquidity pool active">
+                        <span className="detail-toggle-knob" />
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
