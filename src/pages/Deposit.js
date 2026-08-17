@@ -69,6 +69,7 @@ const NETWORK_OPTIONS = [
   { key: "TRC20", label: "TRC20" },
   { key: "ETH", label: "ETH" },
   { key: "SOL", label: "SOL" },
+  { key: "BEP20", label: "BEP20" },
 ];
 
 const Deposit = () => {
