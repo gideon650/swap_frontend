@@ -1,0 +1,383 @@
+/* ================================================================
+   Bonus Page — full status view for an active BonusClaim.
+   Reuses the gold accent from BonusSection / BonusModal so the
+   whole bonus experience feels like one coherent surface.
+   ================================================================ */
+
+.bonus-page-root {
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+  font-family: 'Inter', 'Roboto', 'Segoe UI', Arial, sans-serif;
+  padding: 1.5rem 1rem var(--page-bottom-clearance, 100px);
+}
+
+.bonus-page-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ---------- Header ---------- */
+.bonus-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.bonus-page-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.bonus-page-back:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.bonus-page-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #ffd700;
+  margin: 0;
+}
+
+.bonus-page-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(212, 160, 23, 0.15);
+  border: 1px solid rgba(212, 160, 23, 0.5);
+  color: #ffd700;
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.bonus-page-refresh:hover {
+  background: rgba(212, 160, 23, 0.28);
+}
+
+.bonus-page-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Hero card ---------- */
+.bonus-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 2rem 1.5rem;
+  background: linear-gradient(135deg, #100a00 0%, #1a0f00 50%, #2a1a00 100%);
+  border: 1px solid rgba(212, 160, 23, 0.5);
+  box-shadow: 0 20px 55px -25px rgba(212, 160, 23, 0.6);
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.bonus-hero::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.22), transparent 70%);
+  pointer-events: none;
+}
+
+.bonus-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -70px;
+  left: -60px;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 160, 23, 0.18), transparent 70%);
+  pointer-events: none;
+}
+
+.bonus-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.bonus-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 160, 23, 0.6);
+  background: rgba(15, 10, 0, 0.6);
+  color: #ffd700;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  margin-bottom: 1rem;
+}
+
+.bonus-hero-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 0.25rem;
+}
+
+.bonus-hero-value {
+  font-size: 2.6rem;
+  font-weight: 900;
+  font-family: 'Roboto Mono', monospace;
+  color: #ffd700;
+  line-height: 1.1;
+  margin-bottom: 0.35rem;
+}
+
+.bonus-hero-sub {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.bonus-hero-profit {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.bonus-hero-profit.positive { color: #22c55e; }
+.bonus-hero-profit.negative { color: #ef4444; }
+
+/* ---------- Stats row ---------- */
+.bonus-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .bonus-stats-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.bonus-stat-card {
+  background: #130013;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.bonus-stat-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.4rem;
+}
+
+.bonus-stat-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.bonus-stat-value.gold { color: #ffd700; }
+
+/* ---------- Progress bar ---------- */
+.bonus-progress-wrap {
+  margin-bottom: 1.75rem;
+}
+
+.bonus-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.5rem;
+}
+
+.bonus-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.bonus-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6b4e00, #d4a017 50%, #ffd700);
+  transition: width 0.4s ease;
+}
+
+/* ---------- Trades section ---------- */
+.bonus-trades-section {
+  margin-bottom: 1.5rem;
+}
+
+.bonus-trades-title {
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0 0 1rem;
+}
+
+.bonus-trades-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.bonus-trade-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: #130013;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 0.75rem 1rem;
+}
+
+.bonus-trade-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1a0f26;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bonus-trade-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bonus-trade-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bonus-trade-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.bonus-trade-side {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.bonus-trade-side.buy {
+  background: rgba(34, 197, 94, 0.18);
+  color: #22c55e;
+}
+
+.bonus-trade-side.sell {
+  background: rgba(239, 68, 68, 0.18);
+  color: #ef4444;
+}
+
+.bonus-trade-meta {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: 'Roboto Mono', monospace;
+  margin-top: 0.15rem;
+}
+
+.bonus-trade-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffd700;
+  flex-shrink: 0;
+}
+
+.bonus-trades-empty {
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 2rem 1rem;
+  background: #130013;
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+/* ---------- Reminder ---------- */
+.bonus-reminder {
+  background: rgba(212, 160, 23, 0.08);
+  border: 1px solid rgba(212, 160, 23, 0.35);
+  border-radius: 16px;
+  padding: 1rem 1.15rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.bonus-reminder strong { color: #ffd700; }
+
+/* ---------- Loading / redirect state ---------- */
+.bonus-page-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: #000;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.9rem;
+}
+
+/* ---------- "See more" button for bundle activity ---------- */
+.bonus-trades-see-more {
+  display: block;
+  margin: 1rem auto 0;
+  padding: 0.55rem 1.25rem;
+  background: transparent;
+  border: 1px solid rgba(212, 160, 23, 0.5);
+  border-radius: 999px;
+  color: #ffd700;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.bonus-trades-see-more:hover {
+  background: rgba(212, 160, 23, 0.15);
+  border-color: rgba(255, 215, 0, 0.9);
+}

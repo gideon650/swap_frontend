@@ -549,3 +549,95 @@
     height: 60px;
   }
 }
+
+/* ============================================= */
+/* Bonus fallback modal — same styles as the      */
+/* trade page. Duplicated here so Swap.css is     */
+/* self-contained; if you later prefer, move      */
+/* these to a shared global stylesheet.           */
+/* ============================================= */
+.trade-fallback-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.trade-fallback-modal {
+  max-width: 420px;
+  width: 100%;
+  background: linear-gradient(135deg, #130013, #2a0030);
+  border: 1px solid rgba(212, 160, 23, 0.5);
+  border-radius: 20px;
+  padding: 1.75rem 1.5rem;
+  color: #fff;
+  box-shadow: 0 20px 55px -25px rgba(212, 160, 23, 0.5);
+}
+
+.trade-fallback-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin: 0 0 0.75rem;
+  color: #ffd700;
+}
+
+.trade-fallback-text {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+}
+
+.trade-fallback-balance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+}
+
+.trade-fallback-balance-row span { color: rgba(255, 255, 255, 0.65); }
+.trade-fallback-balance-row strong { color: #ffd700; font-family: 'Roboto Mono', monospace; }
+
+.trade-fallback-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.trade-fallback-btn {
+  flex: 1;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.trade-fallback-btn.cancel {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.trade-fallback-btn.cancel:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.trade-fallback-btn.confirm {
+  background: linear-gradient(90deg, #6b4e00, #d4a017 50%, #ffd700);
+  color: #1a0f00;
+}
+
+.trade-fallback-btn.confirm:hover {
+  transform: scale(1.01);
+}

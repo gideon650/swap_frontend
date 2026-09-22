@@ -3,7 +3,7 @@ import axios from "axios";
 import moment from "moment-timezone";
 import "./Swap.css";
 
-/* ---------- Inline icons (kept dependency-free, no lucide-react in this project) ---------- */
+/* ---------- Inline icons ---------- */
 const IconChevronDown = ({ className }) => (
   <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="6 9 12 15 18 9" />
@@ -33,7 +33,7 @@ const IconArrowLeftRight = ({ className }) => (
   </svg>
 );
 
-/* ---------- Gold Coin (animated) — ported as-is from the reference ---------- */
+/* ---------- Gold Coin (animated) ---------- */
 function GoldCoin({ size = 56, className = "", style, symbol = "$" }) {
   return (
     <div
@@ -54,7 +54,6 @@ function GoldCoin({ size = 56, className = "", style, symbol = "$" }) {
   );
 }
 
-/* ---------- Field wrapper ---------- */
 function Field({ label, hint, error, children }) {
   return (
     <div className="sw-field">
@@ -68,7 +67,6 @@ function Field({ label, hint, error, children }) {
   );
 }
 
-/* ---------- Token badge ---------- */
 function TokenBadge({ symbol, imageUrl }) {
   if (imageUrl) {
     return (
@@ -95,6 +93,7 @@ const Swap = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [hasPendingSwap, setHasPendingSwap] = useState(false);
   const [amountError, setAmountError] = useState(false);
+  const [fallbackOffer, setFallbackOffer] = useState(null);
 
   const dropdownRef = useRef(null);
   const MINIMUM_SWAP_AMOUNT = 3;
@@ -206,7 +205,7 @@ const Swap = () => {
     return asset ? asset.id : null;
   };
 
-  const handleSwap = async () => {
+  const handleSwap = async (useMainBalance = false) => {
     const missingFields = [];
     if (!swapAmount) missingFields.push("Swap Amount");
     if (!swapToAsset) missingFields.push("Swap To Asset");
@@ -241,6 +240,10 @@ const Swap = () => {
         swap_back_time: swapBackTimeISO,
       };
 
+      if (useMainBalance) {
+        payload.use_main_balance = true;
+      }
+
       const response = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/swap-tokens/`,
         payload,
@@ -253,12 +256,35 @@ const Swap = () => {
       setSwapToAsset("");
       setSearchQuery("");
       setSwapBackTime("");
+      setFallbackOffer(null);
     } catch (error) {
-      const errorMessage = error.response?.data?.error || "Swap failed. Please try again.";
+      const respData = error.response?.data;
+
+      if (respData?.code === "insufficient_bundle" && !useMainBalance) {
+        setFallbackOffer({
+          bundleAvailable: respData.bundle_available,
+          mainBalanceAvailable: respData.main_balance_available,
+          required: respData.required,
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const errorMessage = respData?.error || "Swap failed. Please try again.";
       setMessage(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleFallbackConfirm = async () => {
+    if (!fallbackOffer) return;
+    setFallbackOffer(null);
+    await handleSwap(true);
+  };
+
+  const handleFallbackCancel = () => {
+    setFallbackOffer(null);
   };
 
   const toAssetOptions = assets.filter((asset) => asset.symbol !== "USDT");
@@ -294,12 +320,46 @@ const Swap = () => {
 
   return (
     <div className="sw-root">
-      {/* Ambient background — kept solid black per current interface, orbs/grid stay off */}
+      {/* Fallback modal — offers to fund the swap from main balance */}
+      {fallbackOffer && (
+        <div className="trade-fallback-overlay">
+          <div className="trade-fallback-modal">
+            <h3 className="trade-fallback-title">Bonus bundle is low</h3>
+            <p className="trade-fallback-text">
+              Your bonus bundle has{" "}
+              <strong>${fallbackOffer.bundleAvailable.toFixed(2)}</strong> available, but this
+              swap needs <strong>${fallbackOffer.required.toFixed(2)}</strong>.
+            </p>
+            <p className="trade-fallback-text">
+              Would you like to fund this swap from your main balance instead?
+              Your bonus bundle will be left untouched.
+            </p>
+            <div className="trade-fallback-balance-row">
+              <span>Main balance:</span>
+              <strong>${fallbackOffer.mainBalanceAvailable.toFixed(2)}</strong>
+            </div>
+            <div className="trade-fallback-actions">
+              <button
+                className="trade-fallback-btn cancel"
+                onClick={handleFallbackCancel}
+              >
+                Cancel
+              </button>
+              <button
+                className="trade-fallback-btn confirm"
+                onClick={handleFallbackConfirm}
+              >
+                Use Main Balance
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div aria-hidden className="sw-bg-orb sw-bg-orb-1" />
       <div aria-hidden className="sw-bg-orb sw-bg-orb-2" />
       <div aria-hidden className="sw-grid" />
 
-      {/* Floating gold coins ambience */}
       <GoldCoin size={40} symbol="$" className="sw-float-a" style={{ position: "absolute", top: "10%", left: "6%" }} />
       <GoldCoin size={28} symbol="₿" className="sw-float-b" style={{ position: "absolute", top: "22%", right: "8%" }} />
       <GoldCoin size={52} symbol="Ξ" className="sw-float-a" style={{ position: "absolute", top: "62%", left: "4%" }} />
@@ -308,7 +368,6 @@ const Swap = () => {
       <GoldCoin size={22} symbol="$" className="sw-float-b" style={{ position: "absolute", top: "88%", left: "40%" }} />
 
       <div className="sw-page">
-        {/* Header */}
         <header className="sw-header">
           <h1 className="sw-title">
             <span className="sw-gold-shimmer">SWAP</span> <span className="sw-title-dim">TOKENS</span>
@@ -318,9 +377,7 @@ const Swap = () => {
           </p>
         </header>
 
-        {/* Card */}
         <div className="sw-card">
-          {/* Amount */}
           <Field label="Quantity" hint="USDT" error={amountError && swapAmount ? getAmountErrorMessage() : ""}>
             <input
               type="number"
@@ -335,7 +392,6 @@ const Swap = () => {
             />
           </Field>
 
-          {/* From (locked) */}
           <Field label="Swap From">
             <div className="sw-input sw-locked-row">
               <div className="sw-token-info">
@@ -349,7 +405,6 @@ const Swap = () => {
             </div>
           </Field>
 
-          {/* Swap divider with animated icon */}
           <div className="sw-divider">
             <div className="sw-divider-line" />
             <div className="sw-swap-btn">
@@ -358,7 +413,6 @@ const Swap = () => {
             <div className="sw-divider-line" />
           </div>
 
-          {/* To */}
           <div ref={dropdownRef} className="sw-dropdown-anchor">
             <Field label="Swap To">
               <button
@@ -425,7 +479,6 @@ const Swap = () => {
             )}
           </div>
 
-          {/* Swap Back (locked) */}
           <Field label="Swap Back To">
             <div className="sw-input sw-locked-row">
               <div className="sw-token-info">
@@ -439,7 +492,6 @@ const Swap = () => {
             </div>
           </Field>
 
-          {/* Duration */}
           <Field label="Swap Back Time" error={timeError}>
             <div className="sw-duration-wrap">
               <IconClock className="sw-duration-icon" />
@@ -455,13 +507,12 @@ const Swap = () => {
             </div>
           </Field>
 
-          {/* Submit — kept exactly as the original swap-logo button */}
           <div className="swap-button-container">
             <img
               src="/images/swap-logo.png"
               alt="Swap Logo"
               className="swap-logo-image"
-              onClick={handleSwap}
+              onClick={() => !submitDisabled && handleSwap(false)}
               style={{
                 opacity: submitDisabled ? 0.5 : 1,
                 cursor: submitDisabled ? "not-allowed" : "pointer",

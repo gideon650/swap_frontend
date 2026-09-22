@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { usePrices } from "../context/PriceContext";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +21,9 @@ import CashbackModal, { useCashbackPromo } from "./CashbackModal";
 // adjust this path (Navbar.js currently imports it as "../pages/NotificationBadge")
 import NotificationBadge from "./NotificationBadge";
 import DepositNotificationBadge from "./DepositNotificationBadge";
+// Bonus feature imports
+import BonusSection from "./BonusSection";
+import useBonusStatus from "./useBonusStatus";
 
 const Dashboard = () => {
   const [portfolio, setPortfolio] = useState(null);
@@ -38,6 +41,14 @@ const Dashboard = () => {
 
   // Cashback promo hook
   const { cashbackPromo, showCashbackModal, setShowCashbackModal } = useCashbackPromo();
+
+  // Bonus status hook
+  const {
+    state: bonusState,
+    tiers: bonusTiers,
+    claim: bonusClaim,
+    refresh: refreshBonusStatus,
+  } = useBonusStatus();
 
   // Live price overlay — `prices` below stays the once-fetched REST snapshot
   // (name, image, price_24h_ago, etc.); livePrices patches price_usd/percent_change
@@ -157,6 +168,21 @@ const Dashboard = () => {
     navigate('/deposit');
   };
 
+  // BonusSection callback — routes deposit clicks and refreshes status after a claim
+  const handleBonusAction = (action) => {
+    if (action === "navigate_deposit") {
+      navigate('/deposit');
+    } else if (action === "refresh") {
+      refreshBonusStatus();
+      // Also refresh portfolio so the locked capital is reflected in the balance
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Token ${token}` } };
+      axios.get(`${process.env.REACT_APP_API_BASE_URL}/portfolio/`, config)
+        .then((res) => setPortfolio(res.data))
+        .catch((err) => console.error("Portfolio refresh failed:", err));
+    }
+  };
+
   const getMessages = () => {
     const messages = [
       {
@@ -201,6 +227,14 @@ const Dashboard = () => {
         return valueB - valueA;
       })
     : [];
+
+  // Whether the bonus card will actually render on this load. Mirrors the
+  // exact conditions inside BonusSection — when any of these are true, the
+  // card is null and the info card should stretch to fill the row.
+  const showBonusCard =
+    bonusState &&
+    bonusState !== "claimed" &&
+    bonusState !== "disabled";
 
   if (loading) {
     return (
@@ -408,24 +442,36 @@ const Dashboard = () => {
           </button>
         </section>
 
-        {/* Sliding Messages Section */}
-        <section className="sliding-messages-section">
-          <div className="sliding-messages-container">
-            {getMessages().map((message, index) => (
-              <div
-                key={message.id}
-                className={`sliding-message ${index === currentMessageIndex ? 'active' : ''}`}
-                onClick={() => handleMessageClick(message.type)}
-              >
-                <div className="message-icon">{message.icon}</div>
+        {/* ── Info (sliding messages) and Bonus card sit side by side.
+             When the bonus card is hidden (toggle off / claimed / no state),
+             the info card stretches to fill the whole row. ── */}
+        <div className={`info-bonus-row ${showBonusCard ? "" : "info-bonus-row--single"}`}>
+          <section className="sliding-messages-section">
+            <div className="sliding-messages-container">
+              {getMessages().map((message, index) => (
                 <div
-                  className="message-text"
-                  dangerouslySetInnerHTML={{ __html: message.text }}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
+                  key={message.id}
+                  className={`sliding-message ${index === currentMessageIndex ? 'active' : ''}`}
+                  onClick={() => handleMessageClick(message.type)}
+                >
+                  <div className="message-icon">{message.icon}</div>
+                  <div
+                    className="message-text"
+                    dangerouslySetInnerHTML={{ __html: message.text }}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <BonusSection
+            state={bonusState}
+            tiers={bonusTiers}
+            claim={bonusClaim}
+            balance={portfolio?.balance_usd}
+            onRefresh={handleBonusAction}
+          />
+        </div>
 
         {/* User Tokens Section */}
         <section className="user-tokens-section">

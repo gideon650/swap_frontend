@@ -27,6 +27,7 @@ import Condition from '../pages/condition';
 import CashbackTerms from "../pages/CashbackTerms";
 import AllTokens from "../pages/AllTokens";
 import TrendingTokens from "../pages/TrendingTokens";
+import BonusPage from "../pages/BonusPage";
 
 const MainLayout = () => {
   const location = useLocation();
@@ -238,6 +239,7 @@ const MainLayout = () => {
         <Route path="/cashback-terms" element={<PrivateRoute><CashbackTerms /></PrivateRoute>} />
         <Route path="/tokens" element={<PrivateRoute><AllTokens /></PrivateRoute>} />
         <Route path="/tokens/:type" element={<PrivateRoute><TrendingTokens /></PrivateRoute>} />
+        <Route path="/bonus" element={<PrivateRoute><BonusPage /></PrivateRoute>} />
         
       </Routes>
     </div>

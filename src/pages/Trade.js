@@ -28,18 +28,18 @@ const Trade = () => {
   const [tradeError, setTradeError] = useState(null);
   const [inputType, setInputType] = useState("amount");
   const [tradeSide, setTradeSide] = useState("buy");
-  // Tracks which sell % button (25/50/75/100) is currently "live" — i.e. the
-  // box should keep recalculating off the live price feed until the user
-  // edits it manually, switches context, or completes the sell.
   const [activeSellPercent, setActiveSellPercent] = useState(null);
   const [showGridlines, setShowGridlines] = useState(true);
   const [portfolio, setPortfolio] = useState(null);
   const [pnlCardData, setPnlCardData] = useState(null);
+  // Fallback modal state — shows when the backend signals the bundle is
+  // insufficient and offers to fund the trade from main balance instead.
+  const [fallbackOffer, setFallbackOffer] = useState(null); // { pendingTrade, bundle, mainBalance, required }
   const chartContainerRef = useRef();
   const chartInstanceRef = useRef(null);
   const candleSeriesRef = useRef(null);
   const trendLineSeriesRef = useRef(null);
-  const lastCandleRef = useRef(null); // most recently known candle — WS ticks patch this in place
+  const lastCandleRef = useRef(null);
   const tickerTrackRef = useRef(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { prices: livePrices } = usePrices();
@@ -101,7 +101,7 @@ const Trade = () => {
         `${process.env.REACT_APP_API_BASE_URL}/candlestick/${symbol}/?interval=${intervalParam}`,
         config
       );
-  
+
       if (response.data.status === "success" && Array.isArray(response.data.chart)) {
         setCandlestickData(response.data.chart);
       }
@@ -131,18 +131,14 @@ const Trade = () => {
       const config = { headers: { Authorization: `Token ${token}` } };
       const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/crypto-prices/`, config);
       const assetList = response.data.cryptocurrencies || [];
-      
+
       const filteredAssetList = filterOutUSDT(assetList);
       setAssets(filteredAssetList);
 
       const tokenFromUrl = searchParams.get('token');
 
       setSelectedAsset(prevSelected => {
-        // Already have a selection (from an earlier call, a user click, or the
-        // URL) — don't stomp on it just because fetchAssets ran again (e.g.
-        // because the interval changed and recreated this callback).
         if (prevSelected) return prevSelected;
-
         if (filteredAssetList.length === 0) return prevSelected;
 
         const initialSymbol =
@@ -196,7 +192,7 @@ const Trade = () => {
 
     if (tradeSide === "buy" && value && !isNaN(parseFloat(value))) {
       const numValue = parseFloat(value);
-      
+
       if (inputType === "amount" && numValue > 0 && numValue < 201) {
         setTradeError("Minimum amount is $201");
       } else if (inputType === "quantity" && numValue > 0) {
@@ -204,7 +200,7 @@ const Trade = () => {
         if (selectedAssetObj) {
           const currentPrice = parseFloat(selectedAssetObj.price_usd);
           const totalCost = numValue * currentPrice;
-          
+
           if (totalCost < 201) {
             setTradeError(`Minimum total cost is $201. Your quantity costs $${totalCost.toFixed(2)}`);
           }
@@ -226,7 +222,6 @@ const Trade = () => {
   }, [selectedAsset]);
 
   const handleAmountChange = (e) => {
-    // Manual typing always wins over live-percent tracking.
     setActiveSellPercent(null);
     applyAmountValue(e.target.value);
   };
@@ -243,13 +238,10 @@ const Trade = () => {
     if (holdingBalance <= 0) return;
 
     if (inputType === "quantity") {
-      // Quantity of tokens held doesn't change with price, so no live
-      // tracking is needed here.
       setActiveSellPercent(null);
       let qty = holdingBalance * (percent / 100);
-      // For 100%, reduce by tiny amount to avoid precision errors
       if (percent === 100) {
-        qty = Math.floor(qty * 1000000) / 1000000; // Round down to 6 decimals
+        qty = Math.floor(qty * 1000000) / 1000000;
       }
       applyAmountValue(parseFloat(qty.toFixed(8)).toString());
     } else {
@@ -261,20 +253,14 @@ const Trade = () => {
         ? parseFloat(fallbackAssetObj.price_usd) || 0
         : 0;
       let dollarAmt = holdingBalance * price * (percent / 100);
-      // For 100%, round down to 2 decimals to avoid precision errors
       if (percent === 100) {
-        dollarAmt = Math.floor(dollarAmt * 100) / 100; // Round down to 2 decimals
+        dollarAmt = Math.floor(dollarAmt * 100) / 100;
       }
       applyAmountValue(dollarAmt.toFixed(2));
-      // Keep recalculating this box off the live price feed until the
-      // user edits it, switches context, or completes the sell.
       setActiveSellPercent(percent);
     }
   };
 
-  // While a sell percent is "active", keep the dollar amount in sync with
-  // the live price feed so what's in the box never lags behind what the
-  // user will actually get when they click Sell.
   useEffect(() => {
     if (!activeSellPercent || inputType !== "amount" || tradeSide !== "sell" || !selectedAsset) {
       return;
@@ -304,12 +290,12 @@ const Trade = () => {
     if (chartInstanceRef.current) {
       chartInstanceRef.current.applyOptions({
         grid: {
-          vertLines: { 
+          vertLines: {
             color: showGridlines ? 'transparent' : 'rgba(160, 32, 240, 0.15)',
             style: 0,
             visible: !showGridlines
           },
-          horzLines: { 
+          horzLines: {
             color: showGridlines ? 'transparent' : 'rgba(160, 32, 240, 0.15)',
             style: 0,
             visible: !showGridlines
@@ -319,7 +305,7 @@ const Trade = () => {
     }
   };
 
-  const handleTrade = async (type) => {
+  const handleTrade = async (type, useMainBalance = false) => {
     setTradeError(null);
     setPnlCardData(null);
 
@@ -340,7 +326,7 @@ const Trade = () => {
     }
 
     const amountValue = parseFloat(amount);
-    
+
     if (isNaN(amountValue) || amountValue <= 0) {
       alert("Amount must be greater than zero.");
       return;
@@ -357,7 +343,7 @@ const Trade = () => {
         if (selectedAssetObj) {
           const currentPrice = parseFloat(selectedAssetObj.price_usd);
           const totalCost = amountValue * currentPrice;
-          
+
           if (totalCost < 201) {
             setTradeError(`Minimum total cost is $201. Your quantity costs $${totalCost.toFixed(2)}`);
             return;
@@ -373,7 +359,7 @@ const Trade = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Token ${token}` } };
-      
+
       const payload = {
         symbol: selectedAsset,
         trade_type: type.toUpperCase(),
@@ -386,6 +372,10 @@ const Trade = () => {
         payload.quantity = amountValue;
       }
 
+      if (useMainBalance) {
+        payload.use_main_balance = true;
+      }
+
       const response = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/trade/`,
         payload,
@@ -395,9 +385,10 @@ const Trade = () => {
       if (response.data.status === "success") {
         setAmount("");
         setActiveSellPercent(null);
+        setFallbackOffer(null);
         fetchCandlestickData(selectedAsset, interval);
         fetchPortfolio();
-        
+
         if (type === "sell" && response.data.trade_data?.pnl_card) {
           setPnlCardData(response.data.trade_data.pnl_card);
         } else {
@@ -408,11 +399,38 @@ const Trade = () => {
       }
       setLoading(false);
     } catch (error) {
-      const errorMessage = error.response?.data?.message || `${type.toUpperCase()} failed. Please try again.`;
+      const respData = error.response?.data;
+
+      // Backend signalled the bundle is insufficient — show the fallback
+      // modal so the user can choose to fund this trade from main balance.
+      if (respData?.code === "insufficient_bundle" && !useMainBalance) {
+        setFallbackOffer({
+          pendingType: type,
+          bundleAvailable: respData.bundle_available,
+          mainBalanceAvailable: respData.main_balance_available,
+          required: respData.required,
+        });
+        setLoading(false);
+        return;
+      }
+
+      const errorMessage = respData?.message || `${type.toUpperCase()} failed. Please try again.`;
       console.error(`${type} failed:`, error);
       alert(errorMessage);
       setLoading(false);
     }
+  };
+
+  const handleFallbackConfirm = async () => {
+    if (!fallbackOffer) return;
+    const { pendingType } = fallbackOffer;
+    setFallbackOffer(null);
+    // Re-fire the same trade with use_main_balance=true.
+    await handleTrade(pendingType, true);
+  };
+
+  const handleFallbackCancel = () => {
+    setFallbackOffer(null);
   };
 
   const handleClosePnLCard = () => {
@@ -445,9 +463,6 @@ const Trade = () => {
     if (value >= 1) {
       return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
-    // Sub-$1 prices: scale decimal places to the price's order of magnitude
-    // so tiny-cap tokens (e.g. $0.0000126) keep their significant digits
-    // instead of rounding down to "$0".
     const magnitude = Math.floor(Math.log10(value));
     const decimals = Math.min(10, -magnitude + 3);
     return value.toFixed(decimals);
@@ -456,9 +471,6 @@ const Trade = () => {
   const getPrecision = (price) => {
     if (!price || price <= 0) return 2;
     if (price >= 1) return 2;
-    // Scale precision to the price's order of magnitude so low-cap tokens
-    // (e.g. $0.0000126) keep enough significant digits instead of being
-    // rounded into a single flat tick.
     const magnitude = Math.floor(Math.log10(price));
     return Math.min(10, -magnitude + 3);
   };
@@ -478,19 +490,19 @@ const Trade = () => {
     }
 
     const width = container.clientWidth;
-    const height = container.clientHeight || 
+    const height = container.clientHeight ||
       (window.innerWidth <= 480 ? 250 : window.innerWidth <= 640 ? 300 : 400);
 
     const prices = candlestickData.flatMap(item => [
-      parseFloat(item.open), 
-      parseFloat(item.high), 
-      parseFloat(item.low), 
+      parseFloat(item.open),
+      parseFloat(item.high),
+      parseFloat(item.low),
       parseFloat(item.close)
     ]);
 
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
-    
+
     const priceRange = maxPrice - minPrice;
     const padding = Math.max(priceRange * 0.05, maxPrice * 0.001);
 
@@ -503,12 +515,12 @@ const Trade = () => {
         fontSize: 12
       },
       grid: {
-        vertLines: { 
+        vertLines: {
           color: showGridlines ? 'rgba(160, 32, 240, 0.15)' : 'transparent',
           style: 0,
           visible: showGridlines
         },
-        horzLines: { 
+        horzLines: {
           color: showGridlines ? 'rgba(160, 32, 240, 0.15)' : 'transparent',
           style: 0,
           visible: showGridlines
@@ -603,11 +615,11 @@ const Trade = () => {
         low: parseFloat(item.low),
         close: parseFloat(item.close)
       }))
-      .filter(item => 
-        !isNaN(item.time) && 
-        !isNaN(item.open) && 
-        !isNaN(item.high) && 
-        !isNaN(item.low) && 
+      .filter(item =>
+        !isNaN(item.time) &&
+        !isNaN(item.open) &&
+        !isNaN(item.high) &&
+        !isNaN(item.low) &&
         !isNaN(item.close)
       )
       .sort((a, b) => a.time - b.time);
@@ -651,10 +663,10 @@ const Trade = () => {
         from: formattedData[startIndex].time,
         to: formattedData[formattedData.length - 1].time
       };
-      
+
       setTimeout(() => {
         chart.timeScale().setVisibleRange(timeRange);
-        
+
         chart.priceScale('right').applyOptions({
           scaleMargins: {
             top: 0.1,
@@ -668,7 +680,7 @@ const Trade = () => {
       autoscaleInfoProvider: () => {
         const timeScale = chart.timeScale();
         const visibleRange = timeScale.getVisibleRange();
-        
+
         if (!visibleRange) {
           return {
             priceRange: {
@@ -681,11 +693,11 @@ const Trade = () => {
             }
           };
         }
-        
-        const visibleData = formattedData.filter(item => 
+
+        const visibleData = formattedData.filter(item =>
           item.time >= visibleRange.from && item.time <= visibleRange.to
         );
-        
+
         if (visibleData.length === 0) {
           return {
             priceRange: {
@@ -694,13 +706,13 @@ const Trade = () => {
             }
           };
         }
-        
+
         const visiblePrices = visibleData.flatMap(item => [item.high, item.low]);
         const visibleMin = Math.min(...visiblePrices);
         const visibleMax = Math.max(...visiblePrices);
         const visibleRange_price = visibleMax - visibleMin;
         const visiblePadding = Math.max(visibleRange_price * 0.05, visibleMax * 0.001);
-        
+
         return {
           priceRange: {
             minValue: visibleMin - visiblePadding,
@@ -719,15 +731,6 @@ const Trade = () => {
     };
   }, [candlestickData, showGridlines]);
 
-  // Keep the chart's pixel width in sync with its container using a
-  // ResizeObserver instead of a window 'resize' listener. On mobile,
-  // scrolling collapses/expands the browser's address bar, which fires a
-  // 'resize' event even though the chart container's *width* hasn't
-  // changed — only the viewport height has. Reacting to that (as the old
-  // window-resize handler did, plus a fitContent() call) re-laid out the
-  // chart and reset the zoomed-in view on every scroll, making the
-  // candles appear to jump away from the current-price display. Only
-  // acting on genuine width changes avoids that.
   useEffect(() => {
     const container = chartContainerRef.current;
     if (!container) return;
@@ -751,7 +754,7 @@ const Trade = () => {
     if (!selectedAsset) return;
 
     let isMounted = true;
-    
+
     const getPollingInterval = () => {
       switch(interval) {
         case '1min': return 10000;
@@ -761,12 +764,12 @@ const Trade = () => {
         default: return 60000;
       }
     };
-    
+
     const pollingInterval = getPollingInterval();
-    
+
     const fetchLatestData = async () => {
       if (!candleSeriesRef.current || !isMounted) return;
-      
+
       try {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Token ${token}` } };
@@ -777,7 +780,7 @@ const Trade = () => {
 
         if (response.data.status === "success" && Array.isArray(response.data.chart) && isMounted) {
           const newData = response.data.chart[response.data.chart.length - 1];
-          
+
           const formattedPoint = {
             time: typeof newData.time === 'number' ? newData.time : parseInt(newData.time),
             open: parseFloat(newData.open),
@@ -785,11 +788,11 @@ const Trade = () => {
             low: parseFloat(newData.low),
             close: parseFloat(newData.close)
           };
-          
-          if (!isNaN(formattedPoint.time) && 
-              !isNaN(formattedPoint.open) && 
-              !isNaN(formattedPoint.high) && 
-              !isNaN(formattedPoint.low) && 
+
+          if (!isNaN(formattedPoint.time) &&
+              !isNaN(formattedPoint.open) &&
+              !isNaN(formattedPoint.high) &&
+              !isNaN(formattedPoint.low) &&
               !isNaN(formattedPoint.close)) {
             candleSeriesRef.current.update(formattedPoint);
             lastCandleRef.current = formattedPoint;
@@ -825,10 +828,6 @@ const Trade = () => {
     };
   }, [selectedAsset, interval]);
 
-  // Live tick from the 'prices' WebSocket — patches the currently-open candle
-  // in place rather than waiting for the next REST poll. Doesn't touch the
-  // candle's `time` bucket, so it never creates a new candle, just moves the
-  // existing one, same as an admin edit landing mid-candle would.
   useEffect(() => {
     if (!selectedAsset) return;
     const live = livePrices[selectedAsset];
@@ -856,10 +855,6 @@ const Trade = () => {
     fetchPortfolio();
   }, [fetchAssets, fetchPortfolio]);
 
-  // Display-only overlay: same asset objects, with price/change fields
-  // patched from the live WebSocket feed where available. Buy/sell handlers
-  // above intentionally keep reading from `assets` directly — the server is
-  // the source of truth for trade price, this is just for what's on screen.
   const liveAssets = useMemo(() => {
     return assets.map((a) => {
       const live = livePrices[a.symbol];
@@ -880,12 +875,6 @@ const Trade = () => {
     new Map(liveAssets.map(a => [a.symbol, a])).values()
   );
 
-  // The track renders two back-to-back copies of tickerAssets and the CSS
-  // animation translates by -50% (i.e. the width of one copy) — so speed
-  // (px/sec) only stays constant across different token-list sizes if the
-  // duration scales with that measured width. A fixed duration (e.g. 40s)
-  // made the ticker visibly faster in production, which has far more real
-  // tokens than a local test list.
   useEffect(() => {
     const track = tickerTrackRef.current;
     if (!track || tickerAssets.length === 0) return;
@@ -900,6 +889,43 @@ const Trade = () => {
     <div className="trade-container">
       {pnlCardData && (
         <PnLCard data={pnlCardData} onClose={handleClosePnLCard} />
+      )}
+
+      {/* Fallback modal — offers to fund a trade from main balance when
+          the bonus bundle is insufficient. */}
+      {fallbackOffer && (
+        <div className="trade-fallback-overlay">
+          <div className="trade-fallback-modal">
+            <h3 className="trade-fallback-title">Bonus bundle is low</h3>
+            <p className="trade-fallback-text">
+              Your bonus bundle has{" "}
+              <strong>${fallbackOffer.bundleAvailable.toFixed(2)}</strong> available, but this
+              trade needs <strong>${fallbackOffer.required.toFixed(2)}</strong>.
+            </p>
+            <p className="trade-fallback-text">
+              Would you like to fund this trade from your main balance instead?
+              Your bonus bundle will be left untouched.
+            </p>
+            <div className="trade-fallback-balance-row">
+              <span>Main balance:</span>
+              <strong>${fallbackOffer.mainBalanceAvailable.toFixed(2)}</strong>
+            </div>
+            <div className="trade-fallback-actions">
+              <button
+                className="trade-fallback-btn cancel"
+                onClick={handleFallbackCancel}
+              >
+                Cancel
+              </button>
+              <button
+                className="trade-fallback-btn confirm"
+                onClick={handleFallbackConfirm}
+              >
+                Use Main Balance
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="trade-header">
@@ -928,7 +954,7 @@ const Trade = () => {
           </div>
         </div>
       )}
-      
+
       {error && (
         <div className="error-message">
           <span className="error-icon">⚠️</span>
@@ -943,14 +969,14 @@ const Trade = () => {
               <div className="asset-select">
                 <label htmlFor="asset-select">Select Token:</label>
                 <div className={`custom-dropdown ${isDropdownOpen ? 'open' : ''}`}>
-                  <div 
+                  <div
                     className="dropdown-header"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   >
                     {selectedAssetObj ? (
                       <>
-                        <img 
-                          src={selectedAssetObj.image_url || "/default-token.png"} 
+                        <img
+                          src={selectedAssetObj.image_url || "/default-token.png"}
                           alt={selectedAssetObj.symbol}
                           className="dropdown-token-image"
                         />
@@ -961,7 +987,7 @@ const Trade = () => {
                     )}
                     <span className="dropdown-arrow">▼</span>
                   </div>
-                  
+
                   {isDropdownOpen && (
                     <div className="dropdown-content">
                       <div className="search-container">
@@ -982,8 +1008,8 @@ const Trade = () => {
                               className={`dropdown-item ${selectedAsset === asset.symbol ? 'selected' : ''}`}
                               onClick={() => handleAssetChange(asset.symbol)}
                             >
-                              <img 
-                                src={asset.image_url || "/default-token.png"} 
+                              <img
+                                src={asset.image_url || "/default-token.png"}
                                 alt={asset.symbol}
                                 className="dropdown-token-image"
                               />
@@ -1001,7 +1027,7 @@ const Trade = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="interval-select">
                 <div className="interval-pill-group">
                   {INTERVAL_OPTIONS.map(opt => (
@@ -1184,7 +1210,7 @@ const Trade = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   {tradeSide === "sell" && (
                     <div className="sell-percent-row">
                       {[25, 50, 75, 100].map((percent) => (
