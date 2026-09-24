@@ -65,6 +65,9 @@ const MainLayout = () => {
       localStorage.removeItem('leftAppTime');
       localStorage.removeItem('user');
       localStorage.removeItem('fcm_token');
+
+      // So the ad banner shows again on the next login
+      sessionStorage.removeItem('ad_banner_dismissed');
       
       setToken(null);
       
@@ -79,6 +82,7 @@ const MainLayout = () => {
       console.error('Error during logout:', error);
       // Still clear local data even if there's an error
       localStorage.clear();
+      sessionStorage.removeItem('ad_banner_dismissed');
       setToken(null);
       navigate('/', { replace: true });
     }
@@ -194,6 +198,12 @@ const MainLayout = () => {
       
       // Clear any leftover away time from previous sessions
       localStorage.removeItem('leftAppTime');
+
+      // Safety net: make sure a fresh login always starts with the ad
+      // banner visible again, even if the previous logout didn't clear
+      // this cleanly (e.g. token just expired without going through
+      // performLogout).
+      sessionStorage.removeItem('ad_banner_dismissed');
       
       setToken(loginData.token);
       

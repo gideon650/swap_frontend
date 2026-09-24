@@ -1,0 +1,124 @@
+/* ================================================================
+   Ad Banner — admin-controlled promotional modal shown in front of
+   the dashboard. Independent styles, distinct blue accent so it
+   reads as "announcement" rather than the gold Bonus or purple
+   Cashback modals.
+   ================================================================ */
+
+@keyframes ad-banner-in {
+  from { opacity: 0; transform: scale(0.94) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.ad-banner-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2100;
+  padding: 1rem;
+}
+
+.ad-banner-modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: 88vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #0a0f1a 0%, #0f1830 50%, #101f3a 100%);
+  border: 1px solid rgba(64, 150, 255, 0.4);
+  box-shadow: 0 25px 60px -20px rgba(64, 150, 255, 0.4);
+  color: #fff;
+  animation: ad-banner-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.ad-banner-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.05rem;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+  z-index: 10;
+}
+
+.ad-banner-close-btn:hover {
+  background: rgba(64, 150, 255, 0.55);
+  color: #fff;
+}
+
+.ad-banner-image-wrap {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 20px 20px 0 0;
+}
+
+/* When there's no title/message/button, the image is the modal's only
+   child — round all four corners so it fills the space cleanly instead
+   of leaving flat bottom edges. */
+.ad-banner-image-wrap:only-child {
+  border-radius: 20px;
+}
+
+.ad-banner-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.ad-banner-body {
+  padding: 1.5rem 1.5rem 1.75rem;
+  text-align: center;
+}
+
+.ad-banner-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  line-height: 1.25;
+  margin: 0 0 0.6rem;
+  color: #fff;
+}
+
+.ad-banner-message {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0 0 1.25rem;
+  white-space: pre-wrap;
+}
+
+.ad-banner-cta-btn {
+  width: 100%;
+  padding: 0.95rem 1.5rem;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #1d4ed8, #3b82f6 50%, #60a5fa);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ad-banner-cta-btn:hover {
+  transform: scale(1.01);
+  box-shadow: 0 10px 25px -8px rgba(59, 130, 246, 0.6);
+}
+
+.ad-banner-modal::-webkit-scrollbar       { width: 6px; }
+.ad-banner-modal::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 10px; }
+.ad-banner-modal::-webkit-scrollbar-thumb { background: rgba(64, 150, 255, 0.6); border-radius: 10px; }

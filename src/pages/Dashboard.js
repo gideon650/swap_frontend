@@ -24,6 +24,9 @@ import DepositNotificationBadge from "./DepositNotificationBadge";
 // Bonus feature imports
 import BonusSection from "./BonusSection";
 import useBonusStatus from "./useBonusStatus";
+// Admin-managed dashboard ad banner
+import AdBanner from "./AdBanner";
+import useAdBanner from "./useAbanner";
 
 const Dashboard = () => {
   const [portfolio, setPortfolio] = useState(null);
@@ -49,6 +52,10 @@ const Dashboard = () => {
     claim: bonusClaim,
     refresh: refreshBonusStatus,
   } = useBonusStatus();
+
+  // Admin-managed ad banner — fetched fresh on every dashboard mount (i.e.
+  // every login/visit), so dismissing it only hides it for that visit.
+  const { banner: adBanner, showAdBanner, dismissAdBanner } = useAdBanner();
 
   // Live price overlay — `prices` below stays the once-fetched REST snapshot
   // (name, image, price_24h_ago, etc.); livePrices patches price_usd/percent_change
@@ -274,6 +281,14 @@ const Dashboard = () => {
             setShowCashbackModal(false);
             navigate('/deposit');
           }}
+        />
+      )}
+
+      {/* Admin Ad Banner */}
+      {showAdBanner && adBanner && (
+        <AdBanner
+          banner={adBanner}
+          onClose={dismissAdBanner}
         />
       )}
 
