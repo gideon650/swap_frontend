@@ -14,7 +14,7 @@ import BonusModal from "./BonusModal";
  *   - not_eligible / eligible → opens the claim modal
  *   - active                  → navigates to /bonus status page
  */
-const BonusSection = ({ state, tiers, claim, balance, onRefresh }) => {
+const BonusSection = ({ state, tiers, claim, balance, thisMonthDeposits, onRefresh }) => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
@@ -90,6 +90,7 @@ const BonusSection = ({ state, tiers, claim, balance, onRefresh }) => {
           tiers={tiers}
           claim={claim}
           balance={balance}
+          thisMonthDeposits={thisMonthDeposits}
           onClose={handleClose}
           onDeposit={handleDeposit}
           onClaimed={handleClaimed}

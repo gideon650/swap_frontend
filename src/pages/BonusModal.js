@@ -17,7 +17,16 @@ const DEFAULT_TIERS = [
   { capital: "1000", bonus: "5000" },
 ];
 
-const BonusModal = ({ state, tiers, claim, balance, onClose, onDeposit, onClaimed }) => {
+const BonusModal = ({
+  state,
+  tiers,
+  claim,
+  balance,
+  thisMonthDeposits,
+  onClose,
+  onDeposit,
+  onClaimed,
+}) => {
   const [selected, setSelected] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
@@ -28,6 +37,7 @@ const BonusModal = ({ state, tiers, claim, balance, onClose, onDeposit, onClaime
   }));
 
   const balanceAvailable = parseFloat(balance ?? 0) || 0;
+  const eligibleThisMonth = parseFloat(thisMonthDeposits ?? 0) || 0;
 
   const handleSelect = (tier) => {
     if (submitting) return;
@@ -99,6 +109,7 @@ const BonusModal = ({ state, tiers, claim, balance, onClose, onDeposit, onClaime
             <EligibleBody
               tierList={tierList}
               balanceAvailable={balanceAvailable}
+              eligibleThisMonth={eligibleThisMonth}
               selected={selected}
               submitting={submitting}
               message={message}
@@ -173,6 +184,7 @@ function NotEligibleBody({ tierList, onDeposit }) {
 function EligibleBody({
   tierList,
   balanceAvailable,
+  eligibleThisMonth,
   selected,
   submitting,
   message,
@@ -195,13 +207,14 @@ function EligibleBody({
         receive the matching trading fund to trade with.
         <br />
         <span style={{ color: "rgba(255,255,255,0.5)" }}>
-          Available balance: <strong style={{ color: "#ffd700" }}>${balanceAvailable.toFixed(2)}</strong>
+          Eligible this month:{" "}
+          <strong style={{ color: "#ffd700" }}>${eligibleThisMonth.toFixed(2)}</strong>
         </span>
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1.25rem" }}>
         {tierList.map((t) => {
-          const disabled = balanceAvailable < t.capital;
+          const disabled = eligibleThisMonth < t.capital;
           const isSelected = selected && selected.capital === t.capital;
           const cls = [
             "bonus-tier-card",
@@ -220,7 +233,7 @@ function EligibleBody({
               <div className="bonus-tier-label">Trading Fund</div>
               <div className="bonus-tier-bonus">${t.bonus.toLocaleString()}</div>
               <div className="bonus-tier-note">
-                {disabled ? "Insufficient" : "To trade with"}
+                {disabled ? "Deposit more" : "To trade with"}
               </div>
             </div>
           );

@@ -3,16 +3,18 @@ import axios from "axios";
 
 /**
  * Fetches /api/bonus/status/ and exposes:
- *   state   — 'not_eligible' | 'eligible' | 'active' | 'claimed'
- *   tiers   — [{ capital, bonus }, ...] (present for not_eligible / eligible)
- *   claim   — active claim object (present for 'active')
- *   loading — boolean
- *   refresh — function to re-fetch
+ *   state              — 'not_eligible' | 'eligible' | 'active' | 'claimed' | 'disabled'
+ *   tiers              — [{ capital, bonus }, ...]
+ *   claim              — active claim object (present for 'active')
+ *   thisMonthDeposits  — number, only present for 'not_eligible' / 'eligible'
+ *   loading            — boolean
+ *   refresh            — function to re-fetch
  */
 const useBonusStatus = () => {
   const [state, setState] = useState(null);
   const [tiers, setTiers] = useState([]);
   const [claim, setClaim] = useState(null);
+  const [thisMonthDeposits, setThisMonthDeposits] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchBonusStatus = useCallback(async () => {
@@ -26,9 +28,9 @@ const useBonusStatus = () => {
       setState(res.data.state);
       setTiers(res.data.tiers || []);
       setClaim(res.data.claim || null);
+      setThisMonthDeposits(res.data.this_month_deposits ?? 0);
     } catch (err) {
       console.error("Failed to fetch bonus status:", err);
-      // Fail quiet — the section simply won't render
       setState(null);
     } finally {
       setLoading(false);
@@ -39,7 +41,14 @@ const useBonusStatus = () => {
     fetchBonusStatus();
   }, [fetchBonusStatus]);
 
-  return { state, tiers, claim, loading, refresh: fetchBonusStatus };
+  return {
+    state,
+    tiers,
+    claim,
+    thisMonthDeposits,
+    loading,
+    refresh: fetchBonusStatus,
+  };
 };
 
 export default useBonusStatus;

@@ -28,18 +28,21 @@ const Trade = () => {
   const [tradeError, setTradeError] = useState(null);
   const [inputType, setInputType] = useState("amount");
   const [tradeSide, setTradeSide] = useState("buy");
+  // Tracks which sell % button (25/50/75/100) is currently "live" — i.e. the
+  // box should keep recalculating off the live price feed until the user
+  // edits it manually, switches context, or completes the sell.
   const [activeSellPercent, setActiveSellPercent] = useState(null);
   const [showGridlines, setShowGridlines] = useState(true);
   const [portfolio, setPortfolio] = useState(null);
   const [pnlCardData, setPnlCardData] = useState(null);
   // Fallback modal state — shows when the backend signals the bundle is
   // insufficient and offers to fund the trade from main balance instead.
-  const [fallbackOffer, setFallbackOffer] = useState(null); // { pendingTrade, bundle, mainBalance, required }
+  const [fallbackOffer, setFallbackOffer] = useState(null);
   const chartContainerRef = useRef();
   const chartInstanceRef = useRef(null);
   const candleSeriesRef = useRef(null);
   const trendLineSeriesRef = useRef(null);
-  const lastCandleRef = useRef(null);
+  const lastCandleRef = useRef(null); // most recently known candle — WS ticks patch this in place
   const tickerTrackRef = useRef(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { prices: livePrices } = usePrices();
@@ -58,6 +61,11 @@ const Trade = () => {
 
   const canTrade = useCallback(() => {
     if (!portfolio) return false;
+    // During an active TradeFi bonus month, the wallet balance is
+    // irrelevant — the user trades with the bundle. Skip the star-rating
+    // gate entirely for these users. The backend enforces its own bundle
+    // sufficiency check.
+    if (portfolio.bonus_claim) return true;
     const balance = Number(portfolio.balance_usd || 0);
     return getStarRating(balance) >= 2;
   }, [portfolio, getStarRating]);
@@ -138,7 +146,11 @@ const Trade = () => {
       const tokenFromUrl = searchParams.get('token');
 
       setSelectedAsset(prevSelected => {
+        // Already have a selection (from an earlier call, a user click, or the
+        // URL) — don't stomp on it just because fetchAssets ran again (e.g.
+        // because the interval changed and recreated this callback).
         if (prevSelected) return prevSelected;
+
         if (filteredAssetList.length === 0) return prevSelected;
 
         const initialSymbol =
@@ -222,6 +234,7 @@ const Trade = () => {
   }, [selectedAsset]);
 
   const handleAmountChange = (e) => {
+    // Manual typing always wins over live-percent tracking.
     setActiveSellPercent(null);
     applyAmountValue(e.target.value);
   };
@@ -238,10 +251,13 @@ const Trade = () => {
     if (holdingBalance <= 0) return;
 
     if (inputType === "quantity") {
+      // Quantity of tokens held doesn't change with price, so no live
+      // tracking is needed here.
       setActiveSellPercent(null);
       let qty = holdingBalance * (percent / 100);
+      // For 100%, reduce by tiny amount to avoid precision errors
       if (percent === 100) {
-        qty = Math.floor(qty * 1000000) / 1000000;
+        qty = Math.floor(qty * 1000000) / 1000000; // Round down to 6 decimals
       }
       applyAmountValue(parseFloat(qty.toFixed(8)).toString());
     } else {
@@ -253,14 +269,20 @@ const Trade = () => {
         ? parseFloat(fallbackAssetObj.price_usd) || 0
         : 0;
       let dollarAmt = holdingBalance * price * (percent / 100);
+      // For 100%, round down to 2 decimals to avoid precision errors
       if (percent === 100) {
         dollarAmt = Math.floor(dollarAmt * 100) / 100;
       }
       applyAmountValue(dollarAmt.toFixed(2));
+      // Keep recalculating this box off the live price feed until the
+      // user edits it, switches context, or completes the sell.
       setActiveSellPercent(percent);
     }
   };
 
+  // While a sell percent is "active", keep the dollar amount in sync with
+  // the live price feed so what's in the box never lags behind what the
+  // user will actually get when they click Sell.
   useEffect(() => {
     if (!activeSellPercent || inputType !== "amount" || tradeSide !== "sell" || !selectedAsset) {
       return;
@@ -463,6 +485,9 @@ const Trade = () => {
     if (value >= 1) {
       return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
+    // Sub-$1 prices: scale decimal places to the price's order of magnitude
+    // so tiny-cap tokens (e.g. $0.0000126) keep their significant digits
+    // instead of rounding down to "$0".
     const magnitude = Math.floor(Math.log10(value));
     const decimals = Math.min(10, -magnitude + 3);
     return value.toFixed(decimals);
@@ -471,6 +496,9 @@ const Trade = () => {
   const getPrecision = (price) => {
     if (!price || price <= 0) return 2;
     if (price >= 1) return 2;
+    // Scale precision to the price's order of magnitude so low-cap tokens
+    // (e.g. $0.0000126) keep enough significant digits instead of being
+    // rounded into a single flat tick.
     const magnitude = Math.floor(Math.log10(price));
     return Math.min(10, -magnitude + 3);
   };
@@ -731,6 +759,15 @@ const Trade = () => {
     };
   }, [candlestickData, showGridlines]);
 
+  // Keep the chart's pixel width in sync with its container using a
+  // ResizeObserver instead of a window 'resize' listener. On mobile,
+  // scrolling collapses/expands the browser's address bar, which fires a
+  // 'resize' event even though the chart container's *width* hasn't
+  // changed — only the viewport height has. Reacting to that (as the old
+  // window-resize handler did, plus a fitContent() call) re-laid out the
+  // chart and reset the zoomed-in view on every scroll, making the
+  // candles appear to jump away from the current-price display. Only
+  // acting on genuine width changes avoids that.
   useEffect(() => {
     const container = chartContainerRef.current;
     if (!container) return;
@@ -828,6 +865,10 @@ const Trade = () => {
     };
   }, [selectedAsset, interval]);
 
+  // Live tick from the 'prices' WebSocket — patches the currently-open candle
+  // in place rather than waiting for the next REST poll. Doesn't touch the
+  // candle's `time` bucket, so it never creates a new candle, just moves the
+  // existing one, same as an admin edit landing mid-candle would.
   useEffect(() => {
     if (!selectedAsset) return;
     const live = livePrices[selectedAsset];
@@ -855,6 +896,10 @@ const Trade = () => {
     fetchPortfolio();
   }, [fetchAssets, fetchPortfolio]);
 
+  // Display-only overlay: same asset objects, with price/change fields
+  // patched from the live WebSocket feed where available. Buy/sell handlers
+  // above intentionally keep reading from `assets` directly — the server is
+  // the source of truth for trade price, this is just for what's on screen.
   const liveAssets = useMemo(() => {
     return assets.map((a) => {
       const live = livePrices[a.symbol];
@@ -875,6 +920,12 @@ const Trade = () => {
     new Map(liveAssets.map(a => [a.symbol, a])).values()
   );
 
+  // The track renders two back-to-back copies of tickerAssets and the CSS
+  // animation translates by -50% (i.e. the width of one copy) — so speed
+  // (px/sec) only stays constant across different token-list sizes if the
+  // duration scales with that measured width. A fixed duration (e.g. 40s)
+  // made the ticker visibly faster in production, which has far more real
+  // tokens than a local test list.
   useEffect(() => {
     const track = tickerTrackRef.current;
     if (!track || tickerAssets.length === 0) return;
