@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaHome, FaWallet, FaChartLine, FaHistory, FaSignOutAlt } from "react-icons/fa";
+import axios from "axios";
 import "./Navbar.css";
 
 const Navbar = ({ onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [hasActiveBonus, setHasActiveBonus] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -27,12 +29,62 @@ const Navbar = ({ onLogout }) => {
     return location.pathname === path ? "active" : "";
   };
 
+  // Check if the user has an active TradeFi claim.
+  // Fetches once on mount; re-fetches when the route changes so the widget
+  // appears/disappears as soon as the user claims or the claim settles.
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkBonusStatus = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          if (isMounted) setHasActiveBonus(false);
+          return;
+        }
+        const config = { headers: { Authorization: `Token ${token}` } };
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_BASE_URL}/bonus/status/`,
+          config
+        );
+        if (isMounted) {
+          setHasActiveBonus(res.data?.state === "active");
+        }
+      } catch (err) {
+        // Fail quiet — no active bonus is a fine default
+        if (isMounted) setHasActiveBonus(false);
+      }
+    };
+
+    checkBonusStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [location.pathname]);
+
+  const isDashboard = location.pathname === "/dashboard";
+  const showBonusWidget = isDashboard && hasActiveBonus;
+
   return (
     <>
       {/* Logout Button at Top Right */}
       <button className="bottom-nav-logout-btn" onClick={handleLogout}>
         <FaSignOutAlt /> <span>Logout</span>
       </button>
+
+      {/* Bonus widget — purple diamond, shown only on the dashboard when
+          the user has an active TradeFi claim. Sits under the logout button. */}
+      {showBonusWidget && (
+        <button
+          className="bottom-nav-bonus-widget"
+          onClick={() => navigate("/bonus")}
+          aria-label="Active TradeFi bonus"
+          title="Your TradeFi bonus is active"
+        >
+          <span className="bottom-nav-bonus-diamond" aria-hidden="true" />
+        </button>
+      )}
 
       <nav className="bottom-nav-bar">
         <Link to="/dashboard" className={isActive("/dashboard")}>

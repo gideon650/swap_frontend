@@ -7,29 +7,51 @@ import BonusModal from "./BonusModal";
  * The TradeFi bonus card, sitting side-by-side with the info carousel
  * on the dashboard.
  *
- * Behavior by state:
- *   - 'not_eligible' / 'eligible':
- *       The card becomes a 2-face carousel that rotates every 10s between
- *       "Claim Bonus" and "Deposit this month". Which face is displayed
- *       determines the click action:
- *         - Claim face  -> opens the claim modal
- *         - Deposit face -> navigates to /deposit
- *   - 'active':
- *       Fixed on a single "Bonus Active" face (no rotation).
- *       Click -> navigates to /bonus status page.
- *   - 'claimed' / 'disabled' / null:
- *       Returns null — the card is hidden entirely.
+ * Behavior:
+ *   - not_eligible / eligible:
+ *       Shows the 2-face carousel (Claim <-> Deposit), rotating every 10s.
+ *   - active + can still claim more this month:
+ *       Same 2-face carousel, still rotating. The user can claim again.
+ *   - active + capped this month:
+ *       Card is hidden entirely. The diamond widget (in the Navbar) is the
+ *       only way to reach the bonus status page.
+ *   - cap_reached / disabled / claimed / null:
+ *       Card is hidden entirely.
+ *
+ * Note: there is no longer any "Bonus Active" card face on the dashboard.
  */
-const BonusSection = ({ state, tiers, claim, balance, thisMonthDeposits, onRefresh }) => {
+const BonusSection = ({
+  state,
+  tiers,
+  claim,
+  balance,
+  cumulativeDeposits,
+  cumulativeLocked,
+  cap,
+  onRefresh,
+}) => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [faceIndex, setFaceIndex] = useState(0);
 
-  // Rotate the two faces every 10s, but only when the card is in the
-  // pre-claim carousel states.
+  // Compute whether the user can still claim more under both constraints.
+  // Smallest tier is $100, so a user must have at least $100 of headroom
+  // under the cap AND at least $100 of deposit budget remaining.
+  const remainingCap = Math.max(0, (cap ?? 1000) - (cumulativeLocked ?? 0));
+  const remainingDepositBudget = Math.max(
+    0,
+    (cumulativeDeposits ?? 0) - (cumulativeLocked ?? 0)
+  );
+  const canStillClaim = remainingCap >= 100 && remainingDepositBudget >= 100;
+
+  const shouldShowCarousel =
+    state === "not_eligible" ||
+    state === "eligible" ||
+    (state === "active" && canStillClaim);
+
+  // Rotate the two faces every 10s while the carousel is visible.
   useEffect(() => {
-    const shouldRotate = state === "not_eligible" || state === "eligible";
-    if (!shouldRotate) {
+    if (!shouldShowCarousel) {
       setFaceIndex(0);
       return;
     }
@@ -37,37 +59,12 @@ const BonusSection = ({ state, tiers, claim, balance, thisMonthDeposits, onRefre
       setFaceIndex((prev) => (prev + 1) % 2);
     }, 10000);
     return () => clearInterval(id);
-  }, [state]);
+  }, [shouldShowCarousel]);
 
-  // Hide entirely when there's nothing to show
-  if (!state || state === "claimed" || state === "disabled") return null;
+  // Hide entirely when the carousel shouldn't show
+  if (!shouldShowCarousel) return null;
 
-  // ------------------ Active state: fixed Bonus Active face ------------------
-  if (state === "active") {
-    const locked = parseFloat(claim?.locked_capital || 0);
-    const bonus = parseFloat(claim?.bonus_amount || 0);
-    return (
-      <section className="bonus-section">
-        <div
-          className="bonus-card"
-          onClick={() => navigate("/bonus")}
-        >
-          <div className="bonus-card-icon">📈</div>
-          <div className="bonus-card-text">
-            Bonus active —{" "}
-            <span className="bonus-card-highlight">${locked.toFixed(0)}</span> locked
-            {" "}+{" "}
-            <span className="bonus-card-highlight">${bonus.toFixed(0)}</span> bonus.
-            Tap to view status
-          </div>
-          <div className="bonus-card-arrow">›</div>
-        </div>
-      </section>
-    );
-  }
-
-  // ------------------ Pre-claim state: 2-face carousel ------------------
-  // Face 0 = Claim, Face 1 = Deposit
+  // Two-face carousel: Face 0 = Claim, Face 1 = Deposit
   const isClaimFace = faceIndex === 0;
 
   const claimFace = (
@@ -116,13 +113,15 @@ const BonusSection = ({ state, tiers, claim, balance, thisMonthDeposits, onRefre
         </div>
       </section>
 
-      {showModal && state !== "active" && (
+      {showModal && (
         <BonusModal
-          state={state}
+          state={state === "active" ? "eligible" : state}
           tiers={tiers}
           claim={claim}
           balance={balance}
-          thisMonthDeposits={thisMonthDeposits}
+          cumulativeDeposits={cumulativeDeposits}
+          cumulativeLocked={cumulativeLocked}
+          cap={cap}
           onClose={handleClose}
           onDeposit={handleDeposit}
           onClaimed={handleClaimed}

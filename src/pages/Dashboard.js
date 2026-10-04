@@ -31,20 +31,30 @@ const Dashboard = () => {
   const [showBalance, setShowBalance] = useState(true);
   const navigate = useNavigate();
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  // Drives which animated background scene shows behind the balance amount.
+  // Cycles through 5 scenes based on the current hour, same idea as the
+  // reference balance hero's rotating animation.
   const [sceneIndex, setSceneIndex] = useState(() => new Date().getHours() % 5);
 
   // Cashback promo hook
   const { cashbackPromo, showCashbackModal, setShowCashbackModal } = useCashbackPromo();
 
-  // Bonus status hook
+  // Bonus status hook — includes cumulative counters used to decide whether
+  // the user can still claim more this month (up to the $1,000 monthly cap
+  // and the 1:1 deposit-backing rule).
   const {
     state: bonusState,
     tiers: bonusTiers,
     claim: bonusClaim,
-    thisMonthDeposits: bonusThisMonthDeposits,
+    cumulativeDeposits: bonusCumulativeDeposits,
+    cumulativeLocked: bonusCumulativeLocked,
+    cap: bonusCap,
     refresh: refreshBonusStatus,
   } = useBonusStatus();
 
+  // Live price overlay — `prices` below stays the once-fetched REST snapshot
+  // (name, image, price_24h_ago, etc.); livePrices patches price_usd/percent_change
+  // on top of it from the WebSocket feed.
   const { prices: livePriceMap } = usePrices();
   const livePrices = useMemo(() => {
     return prices.map((p) => {
@@ -57,13 +67,14 @@ const Dashboard = () => {
         ...p,
         price_usd: live.price_usd,
         prev_price_usd: live.prev_price_usd,
-        percent_change: live.percent_change,
+        percent_change: live.percent_change, // tick-based — unchanged, still drives the Tokens list
         change: live.percent_change > 0 ? "up" : live.percent_change < 0 ? "down" : "same",
-        percent_change_24h: percentChange24h,
+        percent_change_24h: percentChange24h, // true 24h — Trending only
       };
     });
   }, [prices, livePriceMap]);
 
+  // Filter function to exclude USDT
   const filterOutUSDT = (tokens) => {
     return tokens.filter(token => token.symbol !== 'USDT');
   };
@@ -96,6 +107,7 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
+  // Message sliding animation
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % 2);
@@ -104,6 +116,7 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Keep the balance-card background scene in sync with the current hour
   useEffect(() => {
     const tick = () => setSceneIndex(new Date().getHours() % 5);
     const id = setInterval(tick, 60000);
@@ -157,11 +170,13 @@ const Dashboard = () => {
     navigate('/deposit');
   };
 
+  // BonusSection callback — routes deposit clicks and refreshes status after a claim
   const handleBonusAction = (action) => {
     if (action === "navigate_deposit") {
       navigate('/deposit');
     } else if (action === "refresh") {
       refreshBonusStatus();
+      // Also refresh portfolio so the locked capital is reflected in the balance
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Token ${token}` } };
       axios.get(`${process.env.REACT_APP_API_BASE_URL}/portfolio/`, config)
@@ -190,6 +205,9 @@ const Dashboard = () => {
     return messages;
   };
 
+  // Trending = top 4 tokens by 24h % gain (price_24h_ago -> current live price).
+  // Uses percent_change_24h, NOT percent_change — that one stays tick-based and
+  // keeps driving the Tokens list / everywhere else in the app unchanged.
   const searchedTokens = livePrices.filter(
     (token) =>
       token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -199,6 +217,7 @@ const Dashboard = () => {
   const trendingTokens = [...searchedTokens].sort(
     (a, b) => b.percent_change_24h - a.percent_change_24h
   );
+  // Always exactly 4 (or fewer if there aren't 4 tokens yet) — drives the grid layout below.
   const visibleTrendingTokens = trendingTokens.slice(0, 4);
 
   const sortedUserTokens = portfolio?.tokens
@@ -211,10 +230,23 @@ const Dashboard = () => {
       })
     : [];
 
+  // Compute whether the user can still claim more — mirrors BonusSection
+  // so the info card stretches to full width when the bonus card hides.
+  const bonusRemainingCap = Math.max(
+    0,
+    (bonusCap ?? 1000) - (bonusCumulativeLocked ?? 0)
+  );
+  const bonusRemainingDepositBudget = Math.max(
+    0,
+    (bonusCumulativeDeposits ?? 0) - (bonusCumulativeLocked ?? 0)
+  );
+  const bonusCanStillClaim =
+    bonusRemainingCap >= 100 && bonusRemainingDepositBudget >= 100;
+
   const showBonusCard =
-    bonusState &&
-    bonusState !== "claimed" &&
-    bonusState !== "disabled";
+    bonusState === "not_eligible" ||
+    bonusState === "eligible" ||
+    (bonusState === "active" && bonusCanStillClaim);
 
   if (loading) {
     return (
@@ -229,6 +261,7 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
 
+      {/* Star Tiers Modal */}
       {showStarTiersModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -244,6 +277,7 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Cashback Promo Modal */}
       {showCashbackModal && cashbackPromo && (
         <CashbackModal
           promo={cashbackPromo}
@@ -272,6 +306,7 @@ const Dashboard = () => {
 
       <main className="dashboard-content">
 
+        {/* Search bar — single row at the top of the page */}
         <div className="dashboard-search-row">
           <div className="search-input-wrapper">
             <FaSearch className="search-icon" />
@@ -285,6 +320,7 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* User Info and Balance */}
         <section className="balance-card">
           <BalanceScene index={sceneIndex} />
           {portfolio && (
@@ -322,6 +358,7 @@ const Dashboard = () => {
               </div>
               <div className="balance-label">Available Balance</div>
 
+              {/* Quick actions: Fund (②) / Withdraw (③) / Buy (Ⓐ) / Invite (Ⓑ) */}
               <div className="quick-actions">
                 <button className="quick-action-btn" onClick={() => navigate('/deposit')} style={{ position: 'relative' }}>
                   <span className="quick-action-icon"><FaWallet /></span>
@@ -345,6 +382,7 @@ const Dashboard = () => {
           )}
         </section>
 
+        {/* Trending Tokens */}
         <section className="trending-section">
           <div className="trending-header-container">
             <div className="trending-title-row">
@@ -375,6 +413,8 @@ const Dashboard = () => {
               className={`trending-grid-layout trending-count-${visibleTrendingTokens.length}`}
             >
               {visibleTrendingTokens.map((token, index) => {
+                // With 3 trending tokens: first two sit side by side, the third
+                // spans the full width on the row below.
                 const isSpanFull = visibleTrendingTokens.length === 3 && index === 2;
                 return (
                   <div
@@ -414,6 +454,9 @@ const Dashboard = () => {
           </button>
         </section>
 
+        {/* ── Info (sliding messages) and Bonus card sit side by side.
+             When the bonus card is hidden (toggle off / claimed / no state),
+             the info card stretches to fill the whole row. ── */}
         <div className={`info-bonus-row ${showBonusCard ? "" : "info-bonus-row--single"}`}>
           <section className="sliding-messages-section">
             <div className="sliding-messages-container">
@@ -438,11 +481,14 @@ const Dashboard = () => {
             tiers={bonusTiers}
             claim={bonusClaim}
             balance={portfolio?.balance_usd}
-            thisMonthDeposits={bonusThisMonthDeposits}
+            cumulativeDeposits={bonusCumulativeDeposits}
+            cumulativeLocked={bonusCumulativeLocked}
+            cap={bonusCap}
             onRefresh={handleBonusAction}
           />
         </div>
 
+        {/* User Tokens Section */}
         <section className="user-tokens-section">
           <div className="section-header">
             <h2>TOKENS</h2>
@@ -511,6 +557,7 @@ const Dashboard = () => {
 export default Dashboard;
 
 /* ---------------- Balance card background animation ---------------- */
+/* Small coin badge used by every scene below. */
 function BalanceCoin({ char, tone }) {
   return (
     <span className={`balance-coin ${tone === "gold" ? "balance-coin-gold" : "balance-coin-purple"}`}>
@@ -519,6 +566,7 @@ function BalanceCoin({ char, tone }) {
   );
 }
 
+/* Picks and renders one of the rotating background scenes. */
 function BalanceScene({ index }) {
   const scenes = [Scene0, Scene1, Scene2, Scene3, Scene4];
   const Scene = scenes[index % scenes.length] || Scene0;
@@ -529,6 +577,7 @@ function BalanceScene({ index }) {
   );
 }
 
+/* Scene 0 — coins crossing the card horizontally, opposite directions */
 function Scene0() {
   return (
     <>
@@ -542,6 +591,7 @@ function Scene0() {
   );
 }
 
+/* Scene 1 — coins orbiting a ring, like the swap FAB */
 function Scene1() {
   return (
     <div className="balance-scene-orbit-wrap">
@@ -556,6 +606,7 @@ function Scene1() {
   );
 }
 
+/* Scene 2 — swap arrows with floating coins at each end */
 function Scene2() {
   return (
     <>
@@ -575,6 +626,7 @@ function Scene2() {
   );
 }
 
+/* Scene 3 — coin rain drifting up and down across a center line */
 function Scene3() {
   const coins = [
     { left: "10%", delay: "0s", tone: "gold", char: "$" },
@@ -594,6 +646,7 @@ function Scene3() {
   );
 }
 
+/* Scene 4 — two people (circles) exchanging coins along arced paths */
 function Scene4() {
   return (
     <>

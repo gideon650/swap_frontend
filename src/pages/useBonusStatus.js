@@ -3,18 +3,22 @@ import axios from "axios";
 
 /**
  * Fetches /api/bonus/status/ and exposes:
- *   state              — 'not_eligible' | 'eligible' | 'active' | 'claimed' | 'disabled'
- *   tiers              — [{ capital, bonus }, ...]
- *   claim              — active claim object (present for 'active')
- *   thisMonthDeposits  — number, only present for 'not_eligible' / 'eligible'
- *   loading            — boolean
- *   refresh            — function to re-fetch
+ *   state               — 'not_eligible' | 'eligible' | 'active' | 'cap_reached' | 'disabled'
+ *   tiers               — [{ capital, bonus }, ...]
+ *   claim               — active claim object (present for 'active')
+ *   cumulativeDeposits  — approved deposits this calendar month
+ *   cumulativeLocked    — locked capital this calendar month
+ *   cap                 — monthly lock cap ($1,000)
+ *   loading             — boolean
+ *   refresh             — function to re-fetch
  */
 const useBonusStatus = () => {
   const [state, setState] = useState(null);
   const [tiers, setTiers] = useState([]);
   const [claim, setClaim] = useState(null);
-  const [thisMonthDeposits, setThisMonthDeposits] = useState(0);
+  const [cumulativeDeposits, setCumulativeDeposits] = useState(0);
+  const [cumulativeLocked, setCumulativeLocked] = useState(0);
+  const [cap, setCap] = useState(1000);
   const [loading, setLoading] = useState(true);
 
   const fetchBonusStatus = useCallback(async () => {
@@ -28,7 +32,9 @@ const useBonusStatus = () => {
       setState(res.data.state);
       setTiers(res.data.tiers || []);
       setClaim(res.data.claim || null);
-      setThisMonthDeposits(res.data.this_month_deposits ?? 0);
+      setCumulativeDeposits(res.data.cumulative_deposits ?? 0);
+      setCumulativeLocked(res.data.cumulative_locked ?? 0);
+      setCap(res.data.cap ?? 1000);
     } catch (err) {
       console.error("Failed to fetch bonus status:", err);
       setState(null);
@@ -45,7 +51,9 @@ const useBonusStatus = () => {
     state,
     tiers,
     claim,
-    thisMonthDeposits,
+    cumulativeDeposits,
+    cumulativeLocked,
+    cap,
     loading,
     refresh: fetchBonusStatus,
   };

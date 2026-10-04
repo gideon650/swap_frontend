@@ -22,7 +22,9 @@ const BonusModal = ({
   tiers,
   claim,
   balance,
-  thisMonthDeposits,
+  cumulativeDeposits,
+  cumulativeLocked,
+  cap,
   onClose,
   onDeposit,
   onClaimed,
@@ -37,7 +39,9 @@ const BonusModal = ({
   }));
 
   const balanceAvailable = parseFloat(balance ?? 0) || 0;
-  const eligibleThisMonth = parseFloat(thisMonthDeposits ?? 0) || 0;
+  const eligibleThisMonth = parseFloat(cumulativeDeposits ?? 0) || 0;
+  const lockedThisMonth = parseFloat(cumulativeLocked ?? 0) || 0;
+  const monthlyCap = parseFloat(cap ?? 1000) || 1000;
 
   const handleSelect = (tier) => {
     if (submitting) return;
@@ -110,6 +114,8 @@ const BonusModal = ({
               tierList={tierList}
               balanceAvailable={balanceAvailable}
               eligibleThisMonth={eligibleThisMonth}
+              lockedThisMonth={lockedThisMonth}
+              monthlyCap={monthlyCap}
               selected={selected}
               submitting={submitting}
               message={message}
@@ -185,12 +191,27 @@ function EligibleBody({
   tierList,
   balanceAvailable,
   eligibleThisMonth,
+  lockedThisMonth,
+  monthlyCap,
   selected,
   submitting,
   message,
   onSelect,
   onClaim,
 }) {
+  // Remaining room under the $1,000 monthly cap
+  const remainingCap = Math.max(0, monthlyCap - lockedThisMonth);
+  // Remaining deposit budget that hasn't yet been locked
+  const remainingDepositBudget = Math.max(0, eligibleThisMonth - lockedThisMonth);
+  // A tier is selectable if it fits under the remaining cap AND is covered by
+  // the remaining deposit budget. Balance check is done separately by the
+  // backend (it locks from balance_usd, not cumulative deposits).
+  const isTierSelectable = (tierCapital) => {
+    if (tierCapital > remainingCap) return false;
+    if (tierCapital > remainingDepositBudget) return false;
+    return true;
+  };
+
   return (
     <>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
@@ -210,11 +231,21 @@ function EligibleBody({
           Eligible this month:{" "}
           <strong style={{ color: "#ffd700" }}>${eligibleThisMonth.toFixed(2)}</strong>
         </span>
+        {lockedThisMonth > 0 && (
+          <>
+            <br />
+            <span style={{ color: "rgba(255,255,255,0.5)" }}>
+              Already locked this month:{" "}
+              <strong style={{ color: "#ffd700" }}>${lockedThisMonth.toFixed(2)}</strong>{" "}
+              of ${monthlyCap.toFixed(2)}
+            </span>
+          </>
+        )}
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1.25rem" }}>
         {tierList.map((t) => {
-          const disabled = eligibleThisMonth < t.capital;
+          const disabled = !isTierSelectable(t.capital);
           const isSelected = selected && selected.capital === t.capital;
           const cls = [
             "bonus-tier-card",
@@ -247,8 +278,8 @@ function EligibleBody({
           <span className="bonus-rule-value">No cancel</span>
         </div>
         <div className="bonus-rule-row">
-          <span className="bonus-rule-label">Frequency</span>
-          <span className="bonus-rule-value">Once per month</span>
+          <span className="bonus-rule-label">Monthly cap</span>
+          <span className="bonus-rule-value">${monthlyCap.toFixed(0)}</span>
         </div>
         <div className="bonus-rule-row">
           <span className="bonus-rule-label">At month end</span>

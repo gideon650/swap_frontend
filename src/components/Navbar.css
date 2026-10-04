@@ -9,30 +9,10 @@
   --gradient-dash: linear-gradient(135deg, #800080, #a020f0);
   --shadow-dash: 0 20px 45px -15px rgba(160, 32, 240, 0.5);
   --glow-dash: 0 0 28px rgba(160, 32, 240, 0.65);
-  /* Real, fixed height of the bar itself (excludes the FAB overflow).
-     Dashboard.css reads this same variable to size its bottom padding,
-     so the two files can never drift out of sync again. */
   --bottom-nav-height: 56px;
-  /* Gap between the floating pill and the screen edges (Telegram-style).
-     Must stay bigger than half the FAB's overflow past the bar, or the
-     FAB gets clipped at the very bottom of the screen. */
   --bottom-nav-gap: 24px;
 }
 
-/* ============================================= */
-/* Global scroll clearance                        */
-/* Navbar renders on every route, so this runs on */
-/* every page too — no need to repeat it per-page  */
-/* in each page's own CSS file. It guarantees the  */
-/* bottom of any page's content can always scroll  */
-/* up clear of the floating pill nav + its FAB.    */
-/* If a given page scrolls its own inner container */
-/* instead of the document body (e.g. a fixed-     */
-/* height layout with overflow-y auto), add         */
-/* `padding-bottom: var(--page-bottom-clearance)`   */
-/* to that container instead — the variable below   */
-/* is available globally once Navbar.css is loaded. */
-/* ============================================= */
 :root {
   --page-bottom-clearance: calc(var(--bottom-nav-height) + var(--bottom-nav-gap) + env(safe-area-inset-bottom, 0px) + 8px);
 }
@@ -79,8 +59,6 @@ body {
     transition: color 0.2s ease;
 }
 
-/* Icon box for non-featured items — plain by default,
-   gradient-filled when active, matching reference proportions */
 .bottom-nav-icon {
     display: flex;
     align-items: center;
@@ -132,15 +110,51 @@ body {
 }
 
 /* ============================================= */
-/* Featured/raised SWAP button — a Moniepoint-    */
-/* style FAB that rises clear above the bar,      */
-/* icon only (no label), and sits outside the     */
-/* normal flex flow so it can be larger than the  */
-/* bar itself without stretching its height.      */
+/* TradeFi bonus widget — purple diamond below    */
+/* the logout button. Appears only on the         */
+/* dashboard when the user has an active claim.   */
 /* ============================================= */
+.bottom-nav-bonus-widget {
+    position: fixed;
+    top: 48px;               /* just under the logout button */
+    right: 10px;
+    width: 38px;
+    height: 38px;
+    background: rgba(19, 0, 19, 0.85);
+    border: 1px solid rgba(160, 32, 240, 0.55);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1001;
+    padding: 0;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    box-shadow: 0 4px 14px -4px rgba(160, 32, 240, 0.6);
+}
 
-/* Invisible flex item that just reserves the middle slot so the
-   remaining 4 links stay evenly spaced either side of the button */
+.bottom-nav-bonus-widget:hover {
+    border-color: rgba(200, 100, 255, 0.95);
+    box-shadow: 0 6px 22px -4px rgba(160, 32, 240, 0.9);
+    transform: translateY(-1px);
+}
+
+/* The diamond itself — a rotated square with a purple gradient */
+.bottom-nav-bonus-diamond {
+    display: block;
+    width: 18px;
+    height: 18px;
+    background: var(--gradient-dash);
+    transform: rotate(45deg);
+    border-radius: 3px;
+    box-shadow:
+        inset 0 0 6px rgba(255, 255, 255, 0.35),
+        0 0 10px rgba(160, 32, 240, 0.85);
+}
+
+/* ============================================= */
+/* Featured/raised SWAP button                    */
+/* ============================================= */
 .bottom-nav-swap-spacer {
   flex: 1;
   height: 100%;
@@ -173,10 +187,6 @@ body {
   transform: translate(-50%, -50%) scale(1.04);
 }
 
-/* ============================================= */
-/* Swap FAB animation — orbiting coins + pulse    */
-/* ring behind them.                               */
-/* ============================================= */
 .bottom-nav-swap-pulse {
   position: absolute;
   inset: 0;
@@ -239,7 +249,6 @@ body {
 .dash-orbit-a { animation: dash-orbit-a 2.6s linear infinite; transform-origin: center; }
 .dash-orbit-b { animation: dash-orbit-b 2.6s linear infinite; transform-origin: center; }
 
-/* Notification badge on the settings icon (used from Dashboard.js) */
 .settings-with-bell {
   position: relative;
   display: inline-block;
@@ -335,6 +344,17 @@ body {
         padding: 4px 6px;
         font-size: 11px;
         min-width: 60px;
+    }
+
+    .bottom-nav-bonus-widget {
+        top: 42px;
+        width: 34px;
+        height: 34px;
+    }
+
+    .bottom-nav-bonus-diamond {
+        width: 15px;
+        height: 15px;
     }
 
     .settings-with-bell .notification-badge-container {
