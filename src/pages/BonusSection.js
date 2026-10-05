@@ -8,17 +8,18 @@ import BonusModal from "./BonusModal";
  * on the dashboard.
  *
  * Behavior:
- *   - not_eligible / eligible:
+ *   - not_eligible / eligible / active / cap_reached:
  *       Shows the 2-face carousel (Claim <-> Deposit), rotating every 10s.
- *   - active + can still claim more this month:
- *       Same 2-face carousel, still rotating. The user can claim again.
- *   - active + capped this month:
- *       Card is hidden entirely. The diamond widget (in the Navbar) is the
- *       only way to reach the bonus status page.
- *   - cap_reached / disabled / claimed / null:
- *       Card is hidden entirely.
+ *       Cap enforcement happens on the backend — the frontend does not hide
+ *       the card based on remaining cap. If the user clicks Claim while
+ *       capped, the modal opens and the backend rejects the claim with a
+ *       clear error message.
+ *   - disabled / null:
+ *       Returns null — the card is hidden entirely.
  *
- * Note: there is no longer any "Bonus Active" card face on the dashboard.
+ * Note: there is no "Bonus Active" card face. When the user is mid-bonus,
+ * the same rotating carousel is shown; the diamond widget in the Navbar
+ * is the shortcut to the /bonus status page.
  */
 const BonusSection = ({
   state,
@@ -34,20 +35,12 @@ const BonusSection = ({
   const [showModal, setShowModal] = useState(false);
   const [faceIndex, setFaceIndex] = useState(0);
 
-  // Compute whether the user can still claim more under both constraints.
-  // Smallest tier is $100, so a user must have at least $100 of headroom
-  // under the cap AND at least $100 of deposit budget remaining.
-  const remainingCap = Math.max(0, (cap ?? 1000) - (cumulativeLocked ?? 0));
-  const remainingDepositBudget = Math.max(
-    0,
-    (cumulativeDeposits ?? 0) - (cumulativeLocked ?? 0)
-  );
-  const canStillClaim = remainingCap >= 100 && remainingDepositBudget >= 100;
-
+  // Card shows for all states except disabled / null.
   const shouldShowCarousel =
     state === "not_eligible" ||
     state === "eligible" ||
-    (state === "active" && canStillClaim);
+    state === "active" ||
+    state === "cap_reached";
 
   // Rotate the two faces every 10s while the carousel is visible.
   useEffect(() => {
@@ -115,7 +108,7 @@ const BonusSection = ({
 
       {showModal && (
         <BonusModal
-          state={state === "active" ? "eligible" : state}
+          state={state === "active" || state === "cap_reached" ? "eligible" : state}
           tiers={tiers}
           claim={claim}
           balance={balance}

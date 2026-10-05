@@ -1682,3 +1682,27 @@
     opacity: 1;
   }
 }
+
+
+/* ============================================= */
+/* Diamond quick action — real diamond emoji      */
+/* with a soft icy-glow to make it stand out      */
+/* against the other quick action icons.          */
+/* ============================================= */
+.quick-action-icon--diamond {
+  font-size: 1.35rem;
+  background: rgba(180, 220, 255, 0.14);
+  border: 1px solid rgba(200, 230, 255, 0.32);
+  box-shadow: 0 0 12px rgba(180, 220, 255, 0.4);
+}
+
+.quick-action-btn:hover .quick-action-icon--diamond {
+  background: rgba(200, 235, 255, 0.24);
+  box-shadow: 0 0 16px rgba(180, 220, 255, 0.65);
+}
+
+@media (max-width: 480px) {
+  .quick-action-icon--diamond {
+    font-size: 1.1rem;
+  }
+}

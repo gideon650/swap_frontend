@@ -110,49 +110,6 @@ body {
 }
 
 /* ============================================= */
-/* TradeFi bonus widget — purple diamond below    */
-/* the logout button. Appears only on the         */
-/* dashboard when the user has an active claim.   */
-/* ============================================= */
-.bottom-nav-bonus-widget {
-    position: fixed;
-    top: 48px;               /* just under the logout button */
-    right: 10px;
-    width: 38px;
-    height: 38px;
-    background: rgba(19, 0, 19, 0.85);
-    border: 1px solid rgba(160, 32, 240, 0.55);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 1001;
-    padding: 0;
-    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
-    box-shadow: 0 4px 14px -4px rgba(160, 32, 240, 0.6);
-}
-
-.bottom-nav-bonus-widget:hover {
-    border-color: rgba(200, 100, 255, 0.95);
-    box-shadow: 0 6px 22px -4px rgba(160, 32, 240, 0.9);
-    transform: translateY(-1px);
-}
-
-/* The diamond itself — a rotated square with a purple gradient */
-.bottom-nav-bonus-diamond {
-    display: block;
-    width: 18px;
-    height: 18px;
-    background: var(--gradient-dash);
-    transform: rotate(45deg);
-    border-radius: 3px;
-    box-shadow:
-        inset 0 0 6px rgba(255, 255, 255, 0.35),
-        0 0 10px rgba(160, 32, 240, 0.85);
-}
-
-/* ============================================= */
 /* Featured/raised SWAP button                    */
 /* ============================================= */
 .bottom-nav-swap-spacer {
@@ -344,17 +301,6 @@ body {
         padding: 4px 6px;
         font-size: 11px;
         min-width: 60px;
-    }
-
-    .bottom-nav-bonus-widget {
-        top: 42px;
-        width: 34px;
-        height: 34px;
-    }
-
-    .bottom-nav-bonus-diamond {
-        width: 15px;
-        height: 15px;
     }
 
     .settings-with-bell .notification-badge-container {

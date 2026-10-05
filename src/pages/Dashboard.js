@@ -39,9 +39,8 @@ const Dashboard = () => {
   // Cashback promo hook
   const { cashbackPromo, showCashbackModal, setShowCashbackModal } = useCashbackPromo();
 
-  // Bonus status hook — includes cumulative counters used to decide whether
-  // the user can still claim more this month (up to the $1,000 monthly cap
-  // and the 1:1 deposit-backing rule).
+  // Bonus status hook — includes cumulative counters used by the modal
+  // to display eligible-this-month amounts and the "already locked" line.
   const {
     state: bonusState,
     tiers: bonusTiers,
@@ -67,9 +66,9 @@ const Dashboard = () => {
         ...p,
         price_usd: live.price_usd,
         prev_price_usd: live.prev_price_usd,
-        percent_change: live.percent_change, // tick-based — unchanged, still drives the Tokens list
+        percent_change: live.percent_change,
         change: live.percent_change > 0 ? "up" : live.percent_change < 0 ? "down" : "same",
-        percent_change_24h: percentChange24h, // true 24h — Trending only
+        percent_change_24h: percentChange24h,
       };
     });
   }, [prices, livePriceMap]);
@@ -230,23 +229,13 @@ const Dashboard = () => {
       })
     : [];
 
-  // Compute whether the user can still claim more — mirrors BonusSection
-  // so the info card stretches to full width when the bonus card hides.
-  const bonusRemainingCap = Math.max(
-    0,
-    (bonusCap ?? 1000) - (bonusCumulativeLocked ?? 0)
-  );
-  const bonusRemainingDepositBudget = Math.max(
-    0,
-    (bonusCumulativeDeposits ?? 0) - (bonusCumulativeLocked ?? 0)
-  );
-  const bonusCanStillClaim =
-    bonusRemainingCap >= 100 && bonusRemainingDepositBudget >= 100;
-
+  // Show the bonus card for any active/pre-claim state. Cap enforcement is
+  // backend-only — the frontend never hides the card based on remaining cap.
   const showBonusCard =
     bonusState === "not_eligible" ||
     bonusState === "eligible" ||
-    (bonusState === "active" && bonusCanStillClaim);
+    bonusState === "active" ||
+    bonusState === "cap_reached";
 
   if (loading) {
     return (
@@ -358,8 +347,19 @@ const Dashboard = () => {
               </div>
               <div className="balance-label">Available Balance</div>
 
-              {/* Quick actions: Fund (②) / Withdraw (③) / Buy (Ⓐ) / Invite (Ⓑ) */}
+              {/* Quick actions: Bonus 💎 (only when active) / Fund / Withdraw / Buy / Invite */}
               <div className="quick-actions">
+                {bonusState === "active" && (
+                  <button
+                    className="quick-action-btn"
+                    onClick={() => navigate('/bonus')}
+                    aria-label="Active TradeFi bonus"
+                    title="Your TradeFi bonus is active"
+                  >
+                    <span className="quick-action-icon quick-action-icon--diamond">💎</span>
+                    <span>Bonus</span>
+                  </button>
+                )}
                 <button className="quick-action-btn" onClick={() => navigate('/deposit')} style={{ position: 'relative' }}>
                   <span className="quick-action-icon"><FaWallet /></span>
                   <span>Fund</span>
@@ -413,8 +413,6 @@ const Dashboard = () => {
               className={`trending-grid-layout trending-count-${visibleTrendingTokens.length}`}
             >
               {visibleTrendingTokens.map((token, index) => {
-                // With 3 trending tokens: first two sit side by side, the third
-                // spans the full width on the row below.
                 const isSpanFull = visibleTrendingTokens.length === 3 && index === 2;
                 return (
                   <div
@@ -454,9 +452,7 @@ const Dashboard = () => {
           </button>
         </section>
 
-        {/* ── Info (sliding messages) and Bonus card sit side by side.
-             When the bonus card is hidden (toggle off / claimed / no state),
-             the info card stretches to fill the whole row. ── */}
+        {/* ── Info (sliding messages) and Bonus card sit side by side. ── */}
         <div className={`info-bonus-row ${showBonusCard ? "" : "info-bonus-row--single"}`}>
           <section className="sliding-messages-section">
             <div className="sliding-messages-container">
@@ -557,7 +553,6 @@ const Dashboard = () => {
 export default Dashboard;
 
 /* ---------------- Balance card background animation ---------------- */
-/* Small coin badge used by every scene below. */
 function BalanceCoin({ char, tone }) {
   return (
     <span className={`balance-coin ${tone === "gold" ? "balance-coin-gold" : "balance-coin-purple"}`}>
@@ -566,7 +561,6 @@ function BalanceCoin({ char, tone }) {
   );
 }
 
-/* Picks and renders one of the rotating background scenes. */
 function BalanceScene({ index }) {
   const scenes = [Scene0, Scene1, Scene2, Scene3, Scene4];
   const Scene = scenes[index % scenes.length] || Scene0;
@@ -577,7 +571,6 @@ function BalanceScene({ index }) {
   );
 }
 
-/* Scene 0 — coins crossing the card horizontally, opposite directions */
 function Scene0() {
   return (
     <>
@@ -591,7 +584,6 @@ function Scene0() {
   );
 }
 
-/* Scene 1 — coins orbiting a ring, like the swap FAB */
 function Scene1() {
   return (
     <div className="balance-scene-orbit-wrap">
@@ -606,7 +598,6 @@ function Scene1() {
   );
 }
 
-/* Scene 2 — swap arrows with floating coins at each end */
 function Scene2() {
   return (
     <>
@@ -626,7 +617,6 @@ function Scene2() {
   );
 }
 
-/* Scene 3 — coin rain drifting up and down across a center line */
 function Scene3() {
   const coins = [
     { left: "10%", delay: "0s", tone: "gold", char: "$" },
@@ -646,7 +636,6 @@ function Scene3() {
   );
 }
 
-/* Scene 4 — two people (circles) exchanging coins along arced paths */
 function Scene4() {
   return (
     <>
